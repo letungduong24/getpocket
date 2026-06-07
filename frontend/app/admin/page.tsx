@@ -395,7 +395,7 @@ function AdminPageContent() {
         {/* Stat tiles + Stat block */}
         <div className="">
           <div className="space-y-4">
-            <SectionHeader title="Overview" action={<SeeMoreLink />} />
+            <SectionHeader title="Tổng quan" />
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <AdminStatTile
                 icon={<ShoppingBag className="h-4 w-4" />}

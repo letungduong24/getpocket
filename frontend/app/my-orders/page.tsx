@@ -126,9 +126,9 @@ function MyOrdersPageContent() {
         </header>
 
         {/* Stat tiles + stat block */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-4 lg:col-span-2">
-            <SectionHeader title="Tổng quan" action={<SeeMoreLink />} />
+        <div className="">
+          <div className="space-y-4">
+            <SectionHeader title="Tổng quan" />
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               <StatTile
                 icon={<ShoppingBag className="h-4 w-4" />}
@@ -249,34 +249,6 @@ function MyOrdersPageContent() {
                 </CardContent>
               </Card>
             </div>
-          </div>
-
-          {/* Stat block */}
-          <div className="space-y-4">
-            <SectionHeader
-              title="Hoạt động"
-              action={<Pill tone="soft">Mới</Pill>}
-            />
-            <StatBlock totalLabel="Hoàn thành" totalValue={completedCount}>
-              <div className="grid grid-cols-2 gap-2">
-                <StatTile
-                  icon={<TrendingUp className="h-4 w-4" />}
-                  label="Tỉ lệ"
-                  value={`${
-                    orders.length
-                      ? Math.round((completedCount / orders.length) * 100)
-                      : 0
-                  }%`}
-                  tone="accent"
-                />
-                <StatTile
-                  icon={<CheckCircle className="h-4 w-4" />}
-                  label="Đơn tốt"
-                  value={completedCount}
-                  tone="success"
-                />
-              </div>
-            </StatBlock>
           </div>
         </div>
       </div>
