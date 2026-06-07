@@ -319,7 +319,7 @@ function MyOrdersPageContent() {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
                   Liên hệ
                 </p>
-                <p className="mt-1 font-bold text-white">
+                <p className="mt-1 font-bold text-white text-wrap break-all">
                   {selectedOrder.contactInfo}
                 </p>
               </div>

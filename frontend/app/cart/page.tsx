@@ -223,20 +223,6 @@ function CartPageContent() {
           </p>
         </header>
 
-        {/* Pricing strip */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/[0.04]">
-          <Pill tone="soft">
-            Giá lẻ: <strong className="text-white">{pricing.retailPrice.toLocaleString()}đ</strong>
-          </Pill>
-          <Pill tone="soft">
-            Giá sỉ (≥ {pricing.wholesaleThreshold} con):{" "}
-            <strong className="text-white">{pricing.wholesalePrice.toLocaleString()}đ</strong>
-          </Pill>
-          <Pill tone="accent">
-            Tạm tính: <strong>{count}</strong> con ·{" "}
-            <strong>{total.toLocaleString()}đ</strong>
-          </Pill>
-        </div>
 
         {success ? (
           <SuccessCard
