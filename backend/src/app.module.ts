@@ -74,9 +74,20 @@ export class AppModule implements OnApplicationBootstrap {
         console.log('[AppModule] Users table is already seeded.');
       }
 
-      // 3. Seed default Event Pack if not exists
+      // 3. Seed Pokedex first (must run before Pack seeder which depends on pokemon_dex)
+      const dexCount = await this.dataSource.query(`SELECT COUNT(*) FROM pokemon_dex;`);
+      if (parseInt(dexCount[0].count, 10) === 0) {
+        console.log('[AppModule] pokemon_dex is empty. Starting Pokedex seeder...');
+        await this.seedPokedex();
+      } else {
+        console.log(`[AppModule] Pokedex is already seeded with ${dexCount[0].count} entries.`);
+      }
+
+      // 4. Seed Pack Pokémon Champions (requires pokemon_dex to be populated)
       // First, clean up old mythical event pack if it exists
       await this.dataSource.query(`DELETE FROM packs WHERE name = 'Gen 1-7 Mythical Event Pack';`);
+      // Also delete empty pack (items=[]) so seeder can re-run properly
+      await this.dataSource.query(`DELETE FROM packs WHERE name = $1 AND items = '[]'::jsonb;`, ['Pack Pokémon Champions']);
 
       const packCheck = await this.dataSource.query(`SELECT COUNT(*) FROM packs WHERE name = $1;`, ['Pack Pokémon Champions']);
       if (parseInt(packCheck[0].count, 10) === 0) {
@@ -158,15 +169,6 @@ export class AppModule implements OnApplicationBootstrap {
         }
       } else {
         console.log('[AppModule] Pack Pokémon Champions is already seeded.');
-      }
-
-      // 4. Seed Pokedex if empty
-      const dexCount = await this.dataSource.query(`SELECT COUNT(*) FROM pokemon_dex;`);
-      if (parseInt(dexCount[0].count, 10) === 0) {
-        console.log('[AppModule] pokemon_dex is empty. Starting Pokedex seeder...');
-        await this.seedPokedex();
-      } else {
-        console.log(`[AppModule] Pokedex is already seeded with ${dexCount[0].count} entries.`);
       }
 
       // 5. Clean up removed moves from pokemon_dex if they exist

@@ -284,45 +284,19 @@ app.MapGet("/api/items", () =>
 {
     try
     {
-        string saveFilePath = "";
-        var pathsToTry = new[] {
-            "../main",
-            "main",
-            "../../main",
-            "C:\\Study\\trade\\main"
-        };
-        foreach (var p in pathsToTry)
-        {
-            if (File.Exists(p))
-            {
-                saveFilePath = p;
-                break;
-            }
-        }
-
-        if (string.IsNullOrEmpty(saveFilePath))
-        {
-            return Results.BadRequest(new { error = "Save file template (main) not found for item filtering." });
-        }
-
-        byte[] saveData = File.ReadAllBytes(saveFilePath);
-        var saveFile = SaveUtil.GetSaveFile(saveData);
-        if (saveFile == null)
-        {
-            return Results.BadRequest(new { error = "Failed to parse save file for item filtering." });
-        }
-
-        ushort[] itemIDs = saveFile.HeldItems.ToArray();
         var result = new List<string>();
-        foreach (var id in itemIDs)
+        var itemlist = GameInfo.Strings.itemlist;
+
+        for (int id = 1; id < itemlist.Length; id++)
         {
-            if (id < GameInfo.Strings.itemlist.Length && id <= saveFile.MaxItemID)
+            string name = itemlist[id];
+            if (!string.IsNullOrWhiteSpace(name)
+                && !name.StartsWith("★")
+                && !name.StartsWith("???")
+                && name != "(None)"
+                && !name.EndsWith(" Z"))
             {
-                string name = GameInfo.Strings.itemlist[id];
-                if (!string.IsNullOrWhiteSpace(name) && !name.StartsWith("★") && !name.StartsWith("???") && name != "(None)" && !name.EndsWith(" Z"))
-                {
-                    result.Add(name);
-                }
+                result.Add(name);
             }
         }
 
