@@ -6,7 +6,7 @@ module.exports = {
       script: "npm",
       args: "run start:prod",
       env: {
-        PORT: 4000,
+        PORT: 8989,
         NODE_ENV: "production",
       },
       watch: false,
@@ -15,9 +15,9 @@ module.exports = {
       name: "trade-frontend",
       cwd: "./frontend",
       script: "npm",
-      args: "run start",
+      args: "run start -- -p 8386",
       env: {
-        PORT: 3000,
+        PORT: 8386,
         NODE_ENV: "production",
       },
       watch: false,
