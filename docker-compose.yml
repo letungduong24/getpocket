@@ -16,9 +16,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   worker:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile
+    image: ldngduong/getpocket-worker:latest
     container_name: gts_worker
     restart: always
     ports:
