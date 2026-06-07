@@ -26,24 +26,5 @@ services:
     depends_on:
       - db
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: gts_backend
-    restart: always
-    ports:
-      - "4000:4000"
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: gts_bot
-      MICROSERVICE_URL: http://worker:5001
-    depends_on:
-      - db
-      - worker
-
 volumes:
   postgres_data:
