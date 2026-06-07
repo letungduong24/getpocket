@@ -36,7 +36,10 @@ import { StatPill } from "@/components/system/primitives";
 import { GameTile } from "@/components/system/dashboard";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useCart } from "@/hooks/use-cart";
+import { useAuth } from "@/components/auth-provider";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
+import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -173,8 +176,58 @@ function pokemonSpriteUrl(natDex: number) {
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${natDex}.png`;
 }
 
-function resolveSprite(pokemon: { spriteUrl: string | null; natDex: number }) {
-  return pokemon.spriteUrl ?? pokemonSpriteUrl(pokemon.natDex);
+function resolveSprite(pokemon: { spriteUrl?: string | null; natDex: number; name?: string; shiny?: boolean }) {
+  if (pokemon.name) {
+    const nameLower = pokemon.name.toLowerCase();
+    if (nameLower.includes("alolan") || nameLower.includes("alola")) {
+      const shinyPath = pokemon.shiny ? "shiny/" : "";
+      // Map Alolan forms to PokéAPI species variant IDs (10091+)
+      const alolaMappings: Record<number, number> = {
+        19: 10091,  // Rattata (Alolan)
+        20: 10092,  // Raticate (Alolan)
+        26: 10100,  // Raichu (Alolan)
+        27: 10101,  // Sandshrew (Alolan)
+        28: 10102,  // Sandslash (Alolan)
+        37: 10103,  // Vulpix (Alolan)
+        38: 10104,  // Ninetales (Alolan)
+        50: 10105,  // Diglett (Alolan)
+        51: 10106,  // Dugtrio (Alolan)
+        52: 10107,  // Meowth (Alolan)
+        53: 10108,  // Persian (Alolan)
+        74: 10109,  // Geodude (Alolan)
+        75: 10110,  // Graveler (Alolan)
+        76: 10111,  // Golem (Alolan)
+        88: 10112,  // Grimer (Alolan)
+        89: 10113,  // Muk (Alolan)
+        103: 10114, // Exeggutor (Alolan)
+        105: 10115, // Marowak (Alolan)
+      };
+
+      const mappedId = alolaMappings[pokemon.natDex];
+      if (mappedId) {
+        return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shinyPath}${mappedId}.png`;
+      }
+    }
+  }
+
+  if (pokemon.spriteUrl) {
+    if (pokemon.shiny && !pokemon.spriteUrl.includes("/shiny/")) {
+      // Adjust standard artwork path for shiny variants
+      if (pokemon.spriteUrl.includes("/sprites/pokemon/other/official-artwork/")) {
+        return pokemon.spriteUrl.replace(
+          "/sprites/pokemon/other/official-artwork/",
+          "/sprites/pokemon/other/official-artwork/shiny/"
+        );
+      } else {
+        return pokemon.spriteUrl.replace(
+          "/sprites/pokemon/",
+          "/sprites/pokemon/shiny/"
+        );
+      }
+    }
+    return pokemon.spriteUrl;
+  }
+  return pokemonSpriteUrl(pokemon.natDex);
 }
 
 function totalEvs(evs: StatDict) {
@@ -201,16 +254,21 @@ export default function ShopClient() {
 
   // Shopping cart — persists to backend when logged in, falls back to localStorage.
   const { cart, addToCart } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
   const [successOrder, setSuccessOrder] = useState<{ id: number; totalPrice: number } | null>(null);
 
   // Pack states
   const [viewingPack, setViewingPack] = useState<any | null>(null);
-  const [packShiny, setPackShiny] = useState(false);
+  const [packShiny, setPackShiny] = useState(true);
+
+  // Pokemon detail (read-only view from pack data)
+  const [viewingPokemon, setViewingPokemon] = useState<any | null>(null);
 
   // Reset packShiny when viewingPack changes
   useEffect(() => {
-    setPackShiny(false);
+    setPackShiny(true);
   }, [viewingPack]);
 
   // Fetch event packs
@@ -438,6 +496,11 @@ export default function ShopClient() {
 
   const handleAddToCart = async () => {
     if (!isValidated) return;
+    if (!user) {
+      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để thêm Pokémon vào giỏ hàng.", variant: "destructive" });
+      router.push("/login");
+      return;
+    }
     await addToCart(JSON.parse(JSON.stringify(config)) as unknown as Parameters<typeof addToCart>[0]);
     toast({
       title: "Đã thêm vào giỏ hàng",
@@ -450,7 +513,12 @@ export default function ShopClient() {
   };
 
   const handleAddPackToCart = async (pack: any, overrideShinyVal?: boolean) => {
-    const isShiny = typeof overrideShinyVal === "boolean" ? overrideShinyVal : false;
+    if (!user) {
+      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để thêm gói vào giỏ hàng.", variant: "destructive" });
+      router.push("/login");
+      return;
+    }
+    const isShiny = typeof overrideShinyVal === "boolean" ? overrideShinyVal : true;
     const packConfig = {
       isPack: true,
       packId: pack.id,
@@ -470,7 +538,7 @@ export default function ShopClient() {
       trainerTid: 0,
       trainerSid: 0,
       price: Number(pack.price),
-      items: pack.items,
+      items: pack.items.map((item: any) => ({ ...item, shiny: true })),
       description: pack.description,
     };
     await addToCart(packConfig as any);
@@ -496,7 +564,7 @@ export default function ShopClient() {
         ) : (
           <>
             {/* ROW 1: Pricing strip */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/[0.04]">
+            {/* <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/[0.04]">
               <StatPill label="Giá lẻ" value={`${pricing.retailPrice.toLocaleString()}đ`} />
               <StatPill
                 separator
@@ -508,23 +576,18 @@ export default function ShopClient() {
                 label="Giỏ hàng"
                 value={`${cartInfo.count} món · ${cartInfo.total.toLocaleString()}đ`}
               />
-            </div>
+            </div> */}
 
             {/* Featured Event Packs Section */}
             {packs.length > 0 && (
               <div className="space-y-4">
-                <SectionHeader
-                  title="Gói Pokémon Đặc Biệt"
-                  description="Các bộ sưu tập Pokémon sự kiện, thần thoại hiếm có sẵn với ưu đãi đặc biệt"
-                />
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   {packs.map((pack) => (
                     <div
                       key={pack.id}
-                      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] hover:ring-[#ff4655]/40 transition-all duration-300"
+                      className="flex flex-col h-full relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] hover:ring-[#ff4655]/40 transition-all duration-300"
                     >
-                      {/* Valorant / Cyberpunk accent line */}
-                      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-[#ff4655] to-[#f47e8a]" />
+                     
 
                       {/* Header */}
                       <div className="flex items-start justify-between gap-4">
@@ -532,9 +595,6 @@ export default function ShopClient() {
                           <div className="flex items-center gap-2">
                             <span className="rounded-md bg-[#ff4655]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff4655] ring-1 ring-[#ff4655]/30">
                               HOT BUY
-                            </span>
-                            <span className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/60 ring-1 ring-white/10">
-                              10 EVENT POKÉMON
                             </span>
                           </div>
                           <h3 className="font-display text-2xl font-black tracking-tight text-white uppercase mt-1.5">
@@ -550,27 +610,18 @@ export default function ShopClient() {
                       </div>
 
                       {/* Description */}
-                      <p className="mt-3 text-sm text-white/60 leading-relaxed max-w-xl">
+                      <p className="mt-3 text-sm text-white/60 leading-relaxed max-w-xl flex-1">
                         {pack.description}
                       </p>
 
                       {/* Preview Grid Hidden - details available in Xem chi tiết modal */}
 
                       {/* Action buttons */}
-                      <div className="mt-6 flex items-center gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          type="button"
-                          className="flex-1 border-white/10 hover:border-white/20 text-white/80 hover:text-white"
-                          onClick={() => setViewingPack(pack)}
-                        >
-                          Xem chi tiết
-                        </Button>
+                      <div className="mt-6">
                         <Button
                           size="sm"
                           type="button"
-                          className="flex-1 bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
+                          className="w-full bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
                           onClick={() => handleAddPackToCart(pack)}
                         >
                           Thêm vào giỏ
@@ -578,6 +629,45 @@ export default function ShopClient() {
                       </div>
                     </div>
                   ))}
+                  <div
+                      className="flex flex-col justify-between relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] hover:ring-[#ff4655]/40 transition-all duration-300"
+                    >
+                      
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="font-display text-2xl font-black tracking-tight text-white uppercase mt-1.5">
+                            Lưu ý mua hàng
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <div className="flex-1">
+                        <p className="mt-3 text-sm text-white/60 leading-relaxed">
+                          Vì toàn bộ Pokemon được chuyển trực tiếp từ Pokemon Bank, người mua cần phải có tài khoản Pokemon Home Premium để nhận Pokemon. Shop có hỗ trợ nâng cấp Premium không phụ phí (lấy giá gốc của Nintendo nếu mua Pack Pokemon bên shop)
+                        </p>
+                        <p className="mt-3 text-sm text-white/60 leading-relaxed">
+                          Giá nâng cấp Pokemon Home: 90.000vnđ/1 tháng - 140.000vnđ/3 tháng - 420.000VNĐ/12 tháng
+                        </p>
+                        <p className="mt-3 text-sm text-white/60 leading-relaxed">
+                          Sau khi đặt hàng, shop sẽ liên hệ với quý khách qua thông tin liên lạc để xác nhận đơn hàng và chốt đơn.
+                        </p>
+                      </div>
+
+                      {/* Preview Grid Hidden - details available in Xem chi tiết modal */}
+
+                      {/* Action buttons */}
+                      <Link href={`https://www.facebook.com/nam.tran.665625/`} className="mt-6">
+                        <Button
+                          size="sm"
+                          type="button"
+                          className="w-full bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
+                        >
+                          Liên hệ tư vấn
+                        </Button>
+                      </Link>
+                    </div>
                 </div>
               </div>
             )}
@@ -585,7 +675,7 @@ export default function ShopClient() {
             {/* ROW 2: Pokédex Nhà Vô Địch — search + type filter + full grid */}
             <div className="space-y-4">
               <SectionHeader
-                title="Shopping"
+                title="Danh sách Pokemon trong Pack Pokémon Champions"
                 description="Toàn bộ Pokémon khả dụng, lọc theo tên, hệ hoặc số Dex"
                 action={
                   <Pill tone="soft">
@@ -637,12 +727,12 @@ export default function ShopClient() {
                       cover={
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={resolveSprite(pk)}
+                          src={resolveSprite({ ...pk, shiny: true })}
                           alt={pk.name}
                           className="h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-110"
                         />
                       }
-                      onClick={() => handleSelectPokemon(pk)}
+                      onClick={() => setViewingPokemon({ ...pk, shiny: true })}
                     />
                   ))}
                 </div>
@@ -673,37 +763,96 @@ export default function ShopClient() {
         )}
       </div>
 
-      {/* ---------------- Configurator Dialog ---------------- */}
-      {selectedPokemon && (
-        <Dialog open={!!selectedPokemon} onOpenChange={(o) => !o && setSelectedPokemon(null)}>
-          <DialogContent className="max-w-3xl">
+      {/* ---------------- Pokemon Detail Dialog (from Pack data) ---------------- */}
+      {viewingPokemon && (
+        <Dialog open={!!viewingPokemon} onOpenChange={(o) => !o && setViewingPokemon(null)}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
             <DialogHeader className="border-b border-white/5 pb-4">
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
                 <Dna className="h-5 w-5 text-accent" />
-                Tùy chỉnh chỉ số — {selectedPokemon.name}
+                {viewingPokemon.name}
               </DialogTitle>
               <DialogDescription>
-                Dex #{selectedPokemon.natDex} · {selectedPokemon.typeOne}
-                {selectedPokemon.typeTwo !== "N/A" && ` / ${selectedPokemon.typeTwo}`}
+                #{viewingPokemon.natDex} · {viewingPokemon.typeOne}
+                {viewingPokemon.typeTwo !== "N/A" && ` / ${viewingPokemon.typeTwo}`}
               </DialogDescription>
             </DialogHeader>
 
-            <ConfiguratorBody
-              selectedPokemon={selectedPokemon}
-              config={config}
-              pokemonSprite={pokemonSprite}
-              validationResult={validationResult}
-              validationErrors={validationErrors}
-              isValidating={validateMutation.isPending}
-              isValidated={isValidated}
-              totalEv={totalEv}
-              evsOver={evsOver}
-              onConfigChange={handleConfigChange}
-              onStatChange={handleStatChange}
-              onMoveChange={handleMoveChange}
-              onValidate={handleValidate}
-              onAddToCart={handleAddToCart}
-            />
+            <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 scrollbar-thin">
+              <div className="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06] space-y-3">
+                <div className="flex gap-4">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black/35 border border-white/5">
+                    <img
+                      src={resolveSprite(viewingPokemon)}
+                      alt={viewingPokemon.name}
+                      className="h-16 w-16 object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-display text-base font-bold text-white">{viewingPokemon.name}</h4>
+                      {viewingPokemon.isEvent && (
+                        <span className="rounded bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-300 ring-1 ring-amber-400/20">Event</span>
+                      )}
+                      <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold text-white/50">Lv.{viewingPokemon.level}</span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-x-4 gap-y-1 text-xs text-white/50">
+                      <p>Đặc tính: <strong className="text-white">{viewingPokemon.ability}</strong></p>
+                      <p>Tính cách: <strong className="text-white">{viewingPokemon.nature}</strong></p>
+                      <p>Vật phẩm: <strong className="text-white">{viewingPokemon.heldItem || "None"}</strong></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-bold uppercase text-white/40 mb-1.5 tracking-wider">Chiêu thức</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(viewingPokemon.moves || []).map((move: string, mIdx: number) => (
+                      <div key={mIdx} className="rounded-lg bg-black/20 px-2 py-1 text-center text-[11px] font-medium text-white/70 border border-white/5">
+                        {move || "—"}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-[9px] font-bold uppercase text-white/30 tracking-wider">IVs</span>
+                    <div className="flex gap-1 text-[10px] mt-0.5">
+                      {Object.entries(viewingPokemon.ivs || {}).map(([stat, val]: any) => (
+                        <div key={stat} className="flex-1 text-center bg-white/5 rounded py-0.5">
+                          <span className="block text-[8px] uppercase text-white/40">{stat}</span>
+                          <span className="font-bold text-white">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold uppercase text-white/30 tracking-wider">EVs</span>
+                    <div className="flex gap-1 text-[10px] mt-0.5">
+                      {Object.entries(viewingPokemon.evs || {}).map(([stat, val]: any) => (
+                        <div key={stat} className="flex-1 text-center bg-white/5 rounded py-0.5">
+                          <span className="block text-[8px] uppercase text-white/40">{stat}</span>
+                          <span className="font-bold text-white">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/5 grid grid-cols-3 gap-2 text-[10px]">
+                  <div><span className="block text-white/40">OT</span><strong className="text-white/80">{viewingPokemon.trainerName}</strong></div>
+                  <div><span className="block text-white/40">TID</span><strong className="text-white/80">{viewingPokemon.trainerTid}</strong></div>
+                  <div><span className="block text-white/40">SID</span><strong className="text-white/80">{viewingPokemon.trainerSid}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 pt-4">
+              <Button className="w-full" variant="outline" onClick={() => setViewingPokemon(null)}>
+                Đóng
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -749,11 +898,7 @@ export default function ShopClient() {
                       {/* Sprite */}
                       <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black/35 border border-white/5">
                         <img
-                          src={
-                            packShiny
-                              ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${pk.speciesId}.png`
-                              : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pk.speciesId}.png`
-                          }
+                          src={resolveSprite({ natDex: pk.speciesId, name: pk.speciesName, shiny: packShiny })}
                           alt={pk.speciesName}
                           className="h-12 w-12 object-contain"
                         />

@@ -393,8 +393,8 @@ function AdminPageContent() {
         </header>
 
         {/* Stat tiles + Stat block */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-4 lg:col-span-2">
+        <div className="">
+          <div className="space-y-4">
             <SectionHeader title="Overview" action={<SeeMoreLink />} />
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <AdminStatTile
@@ -550,67 +550,6 @@ function AdminPageContent() {
                 </CardContent>
               </Card>
             </div>
-          </div>
-
-          {/* Stat block — visual chart */}
-          <div className="space-y-4">
-            <SectionHeader title="Doanh thu" action={<Pill tone="soft">30 ngày</Pill>} />
-            <StatBlock totalLabel="Tổng doanh thu" totalValue={`${totalRevenue.toLocaleString()}đ`}>
-              <div className="grid grid-cols-2 gap-2">
-                <AdminStatTile
-                  icon={<Users className="h-4 w-4" />}
-                  label="Khách"
-                  value={new Set(orders.map((o) => o.customerName)).size}
-                  tone="info"
-                />
-                <AdminStatTile
-                  icon={<Activity className="h-4 w-4" />}
-                  label="Tỉ lệ"
-                  value={`${completionRate}%`}
-                  tone="accent"
-                />
-              </div>
-            </StatBlock>
-
-            {/* Guide card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="h-5 w-5 text-accent" />
-                  Hướng dẫn nghiệp vụ
-                </CardTitle>
-                <CardDescription>
-                  Quy trình Inject file và chuyển Pokémon bằng Pokémon Bank
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-white/70">
-                <div className="space-y-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.04]">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-accent">
-                    Phần 1 · Chuẩn bị Save
-                  </h4>
-                  <ol className="list-decimal space-y-1 pl-4 text-xs text-white/60">
-                    <li>Vào đơn hàng bên dưới, tìm đơn <strong className="text-white">đang chờ giao</strong>.</li>
-                    <li>Nhấn nút <strong className="text-white">Tải File .pk7 (ZIP)</strong>.</li>
-                    <li>
-                      Giải nén vào thư mục{" "}
-                      <code className="text-white">/3ds/PKSM/inject/</code>.
-                    </li>
-                    <li>Mở 3DS, chạy <strong className="text-white">PKSM</strong> để inject vào save game.</li>
-                  </ol>
-                </div>
-                <div className="space-y-2 rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.04]">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-accent">
-                    Phần 2 · Transfer HOME
-                  </h4>
-                  <ol className="list-decimal space-y-1 pl-4 text-xs text-white/60">
-                    <li>Mở game trên 3DS kiểm tra Pokémon trong Box.</li>
-                    <li>Mở <strong className="text-white">Pokémon Bank</strong>, chuyển sang HOME.</li>
-                    <li>Yêu cầu khách gửi <strong className="text-white">Moving Key (16 ký tự)</strong>.</li>
-                    <li>Nhập Moving Key vào Bank, ấn <strong className="text-white">Hoàn thành</strong> trên Dashboard.</li>
-                  </ol>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
 

@@ -284,10 +284,12 @@ app.MapGet("/api/items", () =>
 {
     try
     {
-        var result = new List<string>();
+        // USUM (Gen 7) held items cap at ID ~959; items above this are Gen 8/9 only
+        const int UsumMaxItemId = 959;
         var itemlist = GameInfo.Strings.itemlist;
+        var result = new List<string>();
 
-        for (int id = 1; id < itemlist.Length; id++)
+        for (int id = 1; id <= UsumMaxItemId && id < itemlist.Length; id++)
         {
             string name = itemlist[id];
             if (!string.IsNullOrWhiteSpace(name)

@@ -1,6 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import ShopClient from "@/components/shop-client";
-import { AuthGuard } from "@/components/auth-provider";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -39,9 +38,7 @@ export default async function HomePage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <AuthGuard>
-        <ShopClient />
-      </AuthGuard>
+      <ShopClient />
     </HydrationBoundary>
   );
 }

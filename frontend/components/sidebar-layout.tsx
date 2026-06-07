@@ -8,6 +8,7 @@ import {
   History,
   ShieldAlert,
   LogOut,
+  LogIn,
   type LucideIcon,
 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
@@ -57,18 +58,22 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     logout();
   };
 
-  if (!user) return null;
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly) return user?.role === "ADMIN";
+    if (item.id === "orders") return !!user; // Only logged in users can see my-orders
+    return true;
+  });
 
   const leftRail = (
     <LeftRail
       brand={
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-accent to-purple-500 text-white ring-2 ring-white/15 lg:h-12 lg:w-12">
-          <Avatar name={user.username} size="sm" />
+          <Avatar name={user ? user.username : "Guest"} size="sm" />
         </div>
       }
       top={
         <>
-          {NAV_ITEMS.filter((i) => !i.adminOnly || user.role === "ADMIN").map(
+          {visibleNavItems.map(
             (item) => {
               const Icon = item.icon;
               const active =
@@ -94,7 +99,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </>
       }
       bottom={
-        <>
+        user ? (
           <button
             type="button"
             onClick={handleLogout}
@@ -103,7 +108,16 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           >
             <LogOut className="h-5 w-5" />
           </button>
-        </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => (window.location.href = "/login")}
+            aria-label="Đăng nhập"
+            className="mt-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[#ff4655] hover:text-[#e03e4c] ring-1 ring-[#ff4655]/20 hover:ring-[#ff4655]/40 transition-all hover:bg-white/[0.06] lg:mt-2 lg:h-12 lg:w-12"
+          >
+            <LogIn className="h-5 w-5" />
+          </button>
+        )
       }
     />
   );

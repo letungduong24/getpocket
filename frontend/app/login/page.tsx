@@ -109,14 +109,24 @@ function LoginPageContent() {
   };
 
   return (
-    <AppShell className="flex min-h-screen items-center justify-center">
-      <div className="grid w-full max-w-5xl grid-cols-1 gap-8 overflow-hidden rounded-[2.5rem] bg-frame p-4 ring-1 ring-white/[0.06] surface-ring lg:grid-cols-2">
+    <AppShell className="flex min-h-screen items-center justify-center relative overflow-hidden">
+      {/* Background Image overlay */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-20 scale-105 filter blur-[4px]" 
+        style={{ backgroundImage: "url('/login.webp')" }} 
+      />
+
+      <div className="relative z-10 grid w-full max-w-5xl grid-cols-1 gap-8 overflow-hidden rounded-[2.5rem] bg-frame/95 backdrop-blur-md p-4 ring-1 ring-white/[0.06] surface-ring lg:grid-cols-2">
         {/* Brand panel */}
-        <div className="relative hidden flex-col justify-between overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#ee7c8a] via-[#e26a82] to-[#a23a8a] p-10 text-white lg:flex accent-glow">
+        <div 
+          className="relative hidden flex-col justify-between overflow-hidden rounded-[2rem] p-10 text-white lg:flex bg-cover bg-center bg-no-repeat ring-1 ring-white/10"
+          style={{ backgroundImage: "linear-gradient(to bottom, rgba(26, 7, 11, 0.3), rgba(26, 7, 11, 0.8)), url('/login.webp')" }}
+        >
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#1a070b] font-black">
-                G
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20 p-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
               </div>
               <div>
                 <h1 className="font-display text-2xl font-bold uppercase tracking-wider">
@@ -128,10 +138,9 @@ function LoginPageContent() {
 
           <div className="space-y-4">
             <h2 className="font-display text-4xl font-bold leading-tight">
-              Cấu hình Pokémon<br />hợp pháp — nhanh chóng.
+              Sở hữu trọn bộ<br />154 Pokémon Champions từ<br />Gen 1 - 7.
             </h2>
           </div>
-
           {/* Decorative blob */}
           <div
             aria-hidden
@@ -142,16 +151,17 @@ function LoginPageContent() {
         {/* Form panel */}
         <Card className="rounded-[2rem] bg-frame ring-1 ring-white/[0.06]">
           <CardHeader className="space-y-2 border-b border-white/5 pb-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#1a070b] font-black text-xl">
-              G
+            <div className="mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/5 backdrop-blur-sm ring-1 ring-white/10 p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             <CardTitle className="mt-2 text-2xl font-bold uppercase tracking-wider text-white">
               {isRegister ? "Đăng ký tài khoản" : "Đăng nhập hệ thống"}
             </CardTitle>
             <CardDescription>
               {isRegister
-                ? "Tạo tài khoản mới để bắt đầu cấu hình Pokémon"
-                : "Truy cập hệ thống quản trị và điều phối Getpocket"}
+                ? "Tạo tài khoản mới để sở hữu bộ sưu tập Pokémon"
+                : "Đăng nhập để sở hữu bộ sưu tập Pokémon"}
             </CardDescription>
           </CardHeader>
 
@@ -248,6 +258,13 @@ function LoginPageContent() {
                   {isRegister
                     ? "Đã có tài khoản? Đăng nhập ngay"
                     : "Chưa có tài khoản? Đăng ký tại đây"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/")}
+                  className="mt-2 text-xs font-semibold uppercase tracking-widest text-[#ff4655] hover:text-[#e03e4c] transition-colors"
+                >
+                  ← Quay lại xem Pokémon
                 </button>
               </div>
             </CardContent>
