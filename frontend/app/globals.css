@@ -1,0 +1,310 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* =============================================================
+   Design System — Gaming Dashboard
+   ----------------------------------------------------------------
+   Layered surface model:
+     frame    — the full-screen maroon canvas (the page)
+     rail     — sidebar block, slightly raised against the frame
+     surface  — card inside the frame
+     overlay  — deepest surface (dialog, popover)
+   ============================================================= */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-frame: var(--frame);
+  --color-frame-foreground: var(--frame-foreground);
+  --color-frame-border: var(--frame-border);
+
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-border: var(--surface-border);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-on-primary: var(--on-primary);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--destructive);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-rail: var(--rail);
+  --color-rail-foreground: var(--rail-foreground);
+  --color-rail-muted: var(--rail-muted);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: Georgia, serif;
+
+  --radius-xs: calc(var(--radius) - 6px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 14px);
+  --radius-3xl: calc(var(--radius) + 22px);
+  --radius-4xl: calc(var(--radius) + 32px);
+
+  --spacing: 0.25rem;
+
+  --shadow-2xs: 0 1px 0 0 rgb(0 0 0 / 0.05);
+  --shadow-xs: 0 2px 4px -1px rgb(0 0 0 / 0.08);
+  --shadow-sm: 0 6px 18px -8px rgb(0 0 0 / 0.25);
+  --shadow: 0 18px 40px -22px rgb(58 16 21 / 0.45);
+  --shadow-md: 0 22px 50px -22px rgb(58 16 21 / 0.55);
+  --shadow-lg: 0 40px 80px -32px rgb(58 16 21 / 0.55);
+  --shadow-xl: 0 50px 100px -30px rgb(58 16 21 / 0.65);
+  --shadow-2xl: 0 60px 120px -30px rgb(58 16 21 / 0.7);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  --tracking-normal: var(--tracking-normal);
+
+  --header-height: 4.5rem;
+  --rail-left-width: 5rem;
+  --rail-right-width: 5.5rem;
+}
+
+:root {
+  --radius: 1rem;
+
+  --tracking-normal: 0em;
+
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  /* FRAME — wine-red full-screen canvas (the page itself) */
+  --frame: #3a1014;
+  --frame-foreground: oklch(0.985 0 0);
+  --frame-border: rgba(255, 255, 255, 0.08);
+
+  /* RAIL — sidebar block, slightly darker than frame for raised effect */
+  --rail: #26080c;
+  --rail-foreground: oklch(0.985 0 0);
+  --rail-muted: rgba(255, 255, 255, 0.4);
+  --rail-border: rgba(255, 255, 255, 0.08);
+
+  /* SURFACE — card inside frame */
+  --surface: #2a0e12;
+  --surface-foreground: oklch(0.985 0 0);
+  --surface-muted: #220a0e;
+  --surface-border: rgba(255, 255, 255, 0.07);
+
+  /* CARD (mapped to surface for backwards compat with shadcn APIs) */
+  --card: var(--surface);
+  --card-foreground: var(--surface-foreground);
+
+  /* PRIMARY — coral accent (used in CTAs, hero) */
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: #1a070b;
+  --on-primary: #1a070b;
+
+  /* ACCENT — coral pink for highlights / hero */
+  --accent: #f47e8a;
+  --accent-foreground: #1a070b;
+  --accent-soft: rgba(244, 126, 138, 0.18);
+
+  /* SECONDARY — dim utility tone */
+  --secondary: #2a0e12;
+  --secondary-foreground: oklch(0.985 0 0);
+
+  /* MUTED */
+  --muted: #220a0e;
+  --muted-foreground: rgba(255, 255, 255, 0.6);
+
+  /* POPOVER / OVERLAY */
+  --popover: #1c070a;
+  --popover-foreground: oklch(0.985 0 0);
+
+  /* STATUS */
+  --success: #34d399;
+  --warning: #fbbf24;
+  --destructive: oklch(0.7 0.18 22);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* BORDERS / INPUTS / RING */
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: rgba(255, 255, 255, 0.5);
+
+  /* RAILS — slim sidebars (slim alias for backwards compat with shadcn APIs) */
+  --sidebar: var(--rail);
+  --sidebar-foreground: var(--rail-foreground);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--accent-foreground);
+  --sidebar-accent: var(--surface-muted);
+  --sidebar-accent-foreground: var(--surface-foreground);
+  --sidebar-border: var(--rail-border);
+  --sidebar-ring: var(--ring);
+
+  --chart-1: #f47e8a;
+  --chart-2: #fbbf24;
+  --chart-3: #34d399;
+  --chart-4: #60a5fa;
+  --chart-5: #c084fc;
+
+  --background: var(--frame);
+  --foreground: var(--frame-foreground);
+}
+
+.dark {
+  --background: var(--frame);
+  --foreground: var(--frame-foreground);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/40;
+  }
+
+  html {
+    @apply font-sans antialiased;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    letter-spacing: var(--tracking-normal);
+    background-image:
+      radial-gradient(60% 50% at 20% 10%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
+      radial-gradient(50% 40% at 90% 90%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  .maplibregl-popup-content {
+    @apply !bg-transparent !shadow-none !p-0 !rounded-none;
+  }
+  .maplibregl-popup-tip {
+    @apply !hidden;
+  }
+}
+
+@layer base {
+  /* Premium styled custom scrollbar utility */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-soft) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--accent-soft);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+}
+
+@layer components {
+  /* Subtle inner highlight used on glassy surfaces */
+  .surface-ring {
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 18px 40px -22px rgb(58 16 21 / 0.45);
+  }
+
+  /* Raised sidebar block — slightly darker bg + right-side ring + soft shadow */
+  .rail-raised {
+    background-color: var(--rail);
+    box-shadow:
+      inset 1px 0 0 0 rgba(255, 255, 255, 0.05),
+      8px 0 24px -12px rgb(0 0 0 / 0.45);
+  }
+
+  /* Soft outer glow for hero / accent surfaces */
+  .accent-glow {
+    box-shadow:
+      0 24px 60px -24px color-mix(in oklch, var(--accent) 55%, transparent),
+      0 0 0 1px color-mix(in oklch, var(--accent) 18%, transparent) inset;
+  }
+
+  /* Animated gradient blob used in stat visualizations */
+  .blob-stat {
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      #f47e8a 0deg,
+      #c084fc 120deg,
+      #fbbf24 220deg,
+      #f47e8a 360deg
+    );
+    filter: blur(40px);
+    opacity: 0.15;
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-fade {
+  animation: page-fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

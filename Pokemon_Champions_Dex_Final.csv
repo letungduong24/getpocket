@@ -1,0 +1,259 @@
+NatDex,Pokemon,Type I,Type II
+3,Venusaur,Grass,Poison
+3,Mega Venusaur,Grass,Poison
+6,Charizard,Fire,Flying
+6,Mega Charizard X,Fire,Dragon
+6,Mega Charizard Y,Fire,Flying
+9,Blastoise,Water,N/A
+9,Mega Blastoise,Water,N/A
+15,Beedrill,Bug,Poison
+15,Mega Beedrill,Bug,Poison
+18,Pidgeot,Normal,Flying
+18,Mega Pidgeot,Normal,Flying
+24,Arbok,Poison,N/A
+25,Pikachu,Electric,N/A
+26,Raichu,Electric,N/A
+26,Mega Raichu X,Electric,N/A
+26,Mega Raichu Y,Electric,N/A
+26,Raichu (Alolan),Electric,Psychic
+36,Clefable,Fairy,N/A
+36,Mega Clefable,Fairy,N/A
+38,Ninetales,Fire,N/A
+38,Ninetales (Alolan),Ice,Fairy
+59,Arcanine,Fire,N/A
+59,Arcanine (Hisuian),Fire,Rock
+65,Alakazam,Psychic,N/A
+65,Mega Alakazam,Psychic,N/A
+68,Machamp,Fighting,N/A
+71,Victreebel,Grass,Poison
+71,Mega Victreebel,Grass,Poison
+80,Slowbro,Water,Psychic
+80,Mega Slowbro,Water,Psychic
+80,Slowbro (Galar),Poison,Psychic
+94,Gengar,Ghost,Poison
+94,Mega Gengar,Ghost,Poison
+115,Kangaskhan,Normal,N/A
+115,Mega Kangaskhan,Normal,N/A
+121,Starmie,Water,Psychic
+121,Mega Starmie,Water,Psychic
+127,Pinsir,Bug,N/A
+127,Mega Pinsir,Bug,Flying
+128,Tauros,Normal,N/A
+128,Tauros (Paldean),Fighting,N/A
+130,Gyarados,Water,Flying
+130,Mega Gyarados,Water,Dark
+132,Ditto,Normal,N/A
+134,Vaporeon,Water,N/A
+135,Jolteon,Electric,N/A
+136,Flareon,Fire,N/A
+142,Aerodactyl,Rock,Flying
+142,Mega Aerodactyl,Rock,Flying
+143,Snorlax,Normal,N/A
+149,Dragonite,Dragon,Flying
+149,Mega Dragonite,Dragon,Flying
+154,Meganium,Grass,N/A
+154,Mega Meganium,Grass,Fairy
+157,Typhlosion,Fire,N/A
+157,Typhlosion (Hisuian),Fire,Ghost
+160,Feraligatr,Water,N/A
+160,Mega Feraligatr,Water,Dark
+168,Ariados,Bug,Poison
+181,Ampharos,Electric,N/A
+181,Mega Ampharos,Electric,Dragon
+184,Azumarill,Water,Fairy
+186,Politoed,Water,N/A
+196,Espeon,Psychic,N/A
+197,Umbreon,Dark,N/A
+199,Slowking,Water,Psychic
+199,Slowking (Galar),Poison,Psychic
+205,Forretress,Bug,Steel
+208,Steelix,Steel,Ground
+208,Mega Steelix,Steel,Ground
+212,Scizor,Bug,Steel
+212,Mega Scizor,Bug,Steel
+214,Heracross,Bug,Fighting
+214,Mega Heracross,Bug,Fighting
+227,Skarmory,Steel,Flying
+227,Mega Skarmory,Steel,Flying
+229,Houndoom,Dark,Fire
+229,Mega Houndoom,Dark,Fire
+248,Tyranitar,Rock,Dark
+248,Mega Tyranitar,Rock,Dark
+279,Pelipper,Water,Flying
+282,Gardevoir,Psychic,Fairy
+282,Mega Gardevoir,Psychic,Fairy
+302,Sableye,Dark,Ghost
+302,Mega Sableye,Dark,Ghost
+306,Aggron,Steel,Rock
+306,Mega Aggron,Steel,N/A
+308,Medicham,Fighting,Psychic
+308,Mega Medicham,Fighting,Psychic
+310,Manectric,Electric,N/A
+310,Mega Manectric,Electric,N/A
+319,Sharpedo,Water,Dark
+319,Mega Sharpedo,Water,Dark
+323,Camerupt,Fire,Ground
+323,Mega Camerupt,Fire,Ground
+324,Torkoal,Fire,N/A
+334,Altaria,Dragon,Flying
+334,Mega Altaria,Dragon,Fairy
+350,Milotic,Water,N/A
+351,Castform,Normal,N/A
+354,Banette,Ghost,N/A
+354,Mega Banette,Ghost,N/A
+358,Chimecho,Psychic,N/A
+358,Mega Chimecho,Psychic,N/A
+359,Absol,Dark,N/A
+359,Mega Absol,Dark,N/A
+362,Glalie,Ice,N/A
+362,Mega Glalie,Ice,N/A
+389,Torterra,Grass,Ground
+392,Infernape,Fire,Fighting
+395,Empoleon,Water,Steel
+405,Luxray,Electric,N/A
+407,Roserade,Grass,Poison
+409,Rampardos,Rock,N/A
+411,Bastiodon,Rock,Steel
+428,Lopunny,Normal,N/A
+428,Mega Lopunny,Normal,Fighting
+442,Spiritomb,Ghost,Dark
+445,Garchomp,Dragon,Ground
+445,Mega Garchomp,Dragon,Ground
+448,Lucario,Fighting,Steel
+448,Mega Lucario,Fighting,Steel
+450,Hippowdon,Ground,N/A
+454,Toxicroak,Poison,Fighting
+460,Abomasnow,Grass,Ice
+460,Mega Abomasnow,Grass,Ice
+461,Weavile,Dark,Ice
+464,Rhyperior,Ground,Rock
+470,Leafeon,Grass,N/A
+471,Glaceon,Ice,N/A
+472,Gliscor,Ground,Flying
+473,Mamoswine,Ice,Ground
+475,Gallade,Psychic,Fighting
+475,Mega Gallade,Psychic,Fighting
+478,Froslass,Ice,Ghost
+478,Mega Froslass,Ice,Ghost
+479,Rotom,Electric,Ghost
+497,Serperior,Grass,N/A
+500,Emboar,Fire,Fighting
+500,Mega Emboar,Fire,Fighting
+503,Samurott,Water,N/A
+503,Samurott (Hisuian),Water,Dark
+505,Watchog,Normal,N/A
+510,Liepard,Dark,N/A
+512,Simisage,Grass,N/A
+514,Simisear,Fire,N/A
+516,Simipour,Water,N/A
+530,Excadrill,Ground,Steel
+530,Mega Excadrill,Ground,Steel
+531,Audino,Normal,N/A
+531,Mega Audino,Normal,Fairy
+534,Conkeldurr,Fighting,N/A
+547,Whimsicott,Grass,Fairy
+553,Krookodile,Ground,Dark
+563,Cofagrigus,Ghost,N/A
+569,Garbodor,Poison,N/A
+571,Zoroark,Dark,N/A
+571,Zoroark (Hisuian),Normal,Ghost
+579,Reuniclus,Psychic,N/A
+584,Vanilluxe,Ice,N/A
+587,Emolga,Electric,Flying
+609,Chandelure,Ghost,Fire
+609,Mega Chandelure,Ghost,Fire
+614,Beartic,Ice,N/A
+618,Stunfisk,Ground,Electric
+618,Stunfisk (Galar),Ground,Steel
+623,Golurk,Ground,Ghost
+623,Mega Golurk,Ground,Ghost
+635,Hydreigon,Dark,Dragon
+637,Volcarona,Bug,Fire
+652,Chesnaught,Grass,Fighting
+652,Mega Chesnaught,Grass,Fighting
+655,Delphox,Fire,Psychic
+655,Mega Delphox,Fire,Psychic
+658,Greninja,Water,Dark
+658,Mega Greninja,Water,Dark
+660,Diggersby,Normal,Ground
+663,Talonflame,Fire,Flying
+666,Vivillon,Bug,Flying
+670,Floette,Fairy,N/A
+670,Mega Floette,Fairy,N/A
+671,Florges,Fairy,N/A
+675,Pangoro,Fighting,Dark
+676,Furfrou,Normal,N/A
+678,Meowstic,Psychic,N/A
+678,Mega Meowstic,Psychic,N/A
+681,Aegislash,Steel,Ghost
+683,Aromatisse,Fairy,N/A
+685,Slurpuff,Fairy,N/A
+693,Clawitzer,Water,N/A
+695,Heliolisk,Electric,Normal
+697,Tyrantrum,Rock,Dragon
+699,Aurorus,Rock,Ice
+700,Sylveon,Fairy,N/A
+701,Hawlucha,Fighting,Flying
+701,Mega Hawlucha,Fighting,Flying
+702,Dedenne,Electric,Fairy
+706,Goodra,Dragon,N/A
+706,Goodra (Hisuian),Steel,Dragon
+707,Klefki,Steel,Fairy
+709,Trevenant,Ghost,Grass
+711,Gourgeist,Ghost,Grass
+713,Avalugg,Ice,N/A
+713,Avalugg (Hisuian),Ice,Rock
+715,Noivern,Flying,Dragon
+724,Decidueye,Grass,Ghost
+724,Decidueye (Hisuian),Grass,Fighting
+727,Incineroar,Fire,Dark
+730,Primarina,Water,Fairy
+733,Toucannon,Normal,Flying
+740,Crabominable,Fighting,Ice
+740,Mega Crabominable,Fighting,Ice
+745,Lycanroc,Rock,N/A
+748,Toxapex,Poison,Water
+750,Mudsdale,Ground,N/A
+752,Araquanid,Water,Bug
+758,Salazzle,Poison,Fire
+763,Tsareena,Grass,N/A
+765,Oranguru,Normal,Psychic
+766,Passimian,Fighting,N/A
+778,Mimikyu,Ghost,Fairy
+780,Drampa,Normal,Dragon
+780,Mega Drampa,Normal,Dragon
+784,Kommo-o,Dragon,Fighting
+823,Corviknight,Flying,Steel
+841,Flapple,Grass,Dragon
+842,Appletun,Grass,Dragon
+844,Sandaconda,Ground,N/A
+855,Polteageist,Ghost,N/A
+858,Hatterene,Psychic,Fairy
+869,Alcremie,Fairy,N/A
+877,Morpeko,Electric,Dark
+887,Dragapult,Dragon,Ghost
+899,Wyrdeer,Normal,Psychic
+900,Kleavor,Bug,Rock
+902,Basculegion,Water,Ghost
+903,Sneasler,Fighting,Poison
+908,Meowscarada,Grass,Dark
+911,Skeledirge,Fire,Ghost
+914,Quaquaval,Water,Fighting
+925,Maushold,Normal,N/A
+934,Garganacl,Rock,N/A
+936,Armarouge,Fire,Psychic
+937,Ceruledge,Fire,Ghost
+939,Bellibolt,Electric,N/A
+952,Scovillain,Grass,Fire
+952,Mega Scovillain,Grass,Fire
+956,Espathra,Psychic,N/A
+959,Tinkaton,Fairy,Steel
+964,Palafin,Water,N/A
+968,Orthworm,Steel,N/A
+970,Glimmora,Rock,Poison
+970,Mega Glimmora,Rock,Poison
+981,Farigiraf,Normal,Psychic
+983,Kingambit,Dark,Steel
+1013,Sinistcha,Grass,Ghost
+1018,Archaludon,Steel,Dragon
+1019,Hydrapple,Grass,Dragon
