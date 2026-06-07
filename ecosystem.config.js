@@ -22,15 +22,5 @@ module.exports = {
       },
       watch: false,
     },
-    {
-      name: "trade-worker",
-      cwd: "./worker",
-      script: "dotnet",
-      args: "run --project worker.csproj -c Release",
-      env: {
-        PORT: 5001,
-      },
-      watch: false,
-    },
   ],
 };
