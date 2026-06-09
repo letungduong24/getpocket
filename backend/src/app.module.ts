@@ -1,5 +1,7 @@
 import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -18,6 +20,10 @@ import { Note } from './shop/note.entity';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60000, limit: 30 }],
+      errorMessage: 'Bạn đã gửi quá nhiều yêu cầu đặt hàng, vui lòng thử lại sau 1 phút.',
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -32,6 +38,9 @@ import { Note } from './shop/note.entity';
     PokedexModule,
     ShopModule,
     AuthModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule implements OnApplicationBootstrap {

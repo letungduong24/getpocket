@@ -4,14 +4,12 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import {
   Store,
-  ShoppingCart,
   History,
   ShieldAlert,
   LogOut,
   LogIn,
   type LucideIcon,
 } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
 
 import {
   AppShell,
@@ -28,17 +26,15 @@ interface User {
 }
 
 type NavItem = {
-  id: string; // added unique id to distinguish items
+  id: string;
   href: string;
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
-  badgeKey?: "cart";
 };
 
 const NAV_ITEMS: NavItem[] = [
   { id: "store", href: "/", label: "Cửa hàng Pokémon", icon: Store },
-  { id: "cart", href: "/cart", label: "Giỏ hàng", icon: ShoppingCart, badgeKey: "cart" },
   { id: "orders", href: "/my-orders", label: "Đơn hàng của tôi", icon: History },
   { id: "admin", href: "/admin", label: "Quản trị (Admin)", icon: ShieldAlert, adminOnly: true },
 ];
@@ -52,7 +48,6 @@ export interface SidebarLayoutProps {
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { cart } = useCart();
 
   const handleLogout = () => {
     logout();
@@ -60,7 +55,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const visibleNavItems = NAV_ITEMS.filter((item) => {
     if (item.adminOnly) return user?.role === "ADMIN";
-    if (item.id === "orders") return !!user; // Only logged in users can see my-orders
+    if (item.id === "orders") return !!user;
     return true;
   });
 
@@ -80,10 +75,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 item.href === "/"
                   ? pathname === "/"
                   : pathname.startsWith(item.href);
-              const badge =
-                item.badgeKey === "cart" && cart.length > 0
-                  ? cart.length
-                  : undefined;
               return (
                 <NavIcon
                   key={item.id}
@@ -91,7 +82,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={active}
                   label={item.label}
                   icon={<Icon className="h-5 w-5" />}
-                  badge={badge}
                 />
               );
             }

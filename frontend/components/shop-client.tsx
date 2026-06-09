@@ -512,13 +512,9 @@ export default function ShopClient() {
     Record<string, unknown>
   >({
     mutationFn: async (payload) => {
-      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/api/orders/simple`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -552,12 +548,6 @@ export default function ShopClient() {
     if (!orderContact.trim()) errors.contactInfo = "Vui lòng nhập phương thức liên hệ (Zalo, Facebook, SĐT)";
     setOrderErrors(errors);
     if (Object.keys(errors).length > 0) return;
-
-    if (!user) {
-      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để đặt hàng.", variant: "destructive" });
-      router.push("/login");
-      return;
-    }
 
     simpleOrderMutation.mutate({
       customerName: orderName,
@@ -610,14 +600,7 @@ export default function ShopClient() {
                   size="sm"
                   type="button"
                   className="w-full bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
-                  onClick={() => {
-                    if (!user) {
-                      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để đặt hàng.", variant: "destructive" });
-                      router.push("/login");
-                      return;
-                    }
-                    setShowOrderDialog(true);
-                  }}
+                  onClick={() => setShowOrderDialog(true)}
                 >
                   Đặt hàng
                 </Button>
@@ -691,26 +674,7 @@ export default function ShopClient() {
               )}
             </div>
 
-            {/* ROW 3: Cart shortcut */}
-            <div className="space-y-4">
-              <SectionHeader
-                title="Giỏ hàng của tôi"
-                description={
-                  cart.length === 0
-                    ? "Bạn chưa có Pokémon nào trong giỏ. Hãy chọn một Pokémon từ danh sách và thiết lập chỉ số."
-                    : `Bạn đang có ${cart.length} Pokémon chờ thanh toán.`
-                }
-                action={
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => (window.location.href = "/cart")}
-                  >
-                    Mở giỏ hàng ({cart.length})
-                  </Button>
-                }
-              />
-            </div>
+
       </div>
 
       {/* ---------------- Pokemon Detail Dialog (from Pack data) ---------------- */}

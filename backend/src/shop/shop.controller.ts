@@ -13,6 +13,7 @@ import {
   BadRequestException,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { ShopService } from './shop.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -52,13 +53,10 @@ export class ShopController {
     return this.shopService.createOrder(dto, userId);
   }
 
-  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 1, ttl: 60000 } })
   @Post('orders/simple')
-  async submitSimpleOrder(
-    @Body() dto: SimpleOrderDto,
-    @CurrentUser('sub') userId: number,
-  ) {
-    return this.shopService.createSimpleOrder(dto, userId);
+  async submitSimpleOrder(@Body() dto: SimpleOrderDto) {
+    return this.shopService.createSimpleOrder(dto);
   }
 
   @UseGuards(AuthGuard)
