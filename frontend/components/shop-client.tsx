@@ -475,7 +475,7 @@ export default function ShopClient() {
     e.preventDefault();
     const errors: Partial<Record<"customerName" | "contactInfo", string>> = {};
     if (!orderName.trim()) errors.customerName = "Vui lòng nhập tên của bạn";
-    if (!orderContact.trim()) errors.contactInfo = "Vui lòng nhập phương thức liên hệ (Zalo, Facebook, SĐT)";
+    if (!orderContact.trim()) errors.contactInfo = "Vui lòng nhập SĐT Zalo";
     setOrderErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -719,10 +719,10 @@ export default function ShopClient() {
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold tracking-wider text-white/60 uppercase">
-                  Liên hệ (Zalo / Facebook / SĐT)
+                  SĐT Zalo
                 </label>
                 <Input
-                  placeholder="Link Facebook hoặc SĐT Zalo..."
+                  placeholder="Nhập SĐT Zalo..."
                   value={orderContact}
                   onChange={(e) => setOrderContact(e.target.value)}
                   className={cn(
