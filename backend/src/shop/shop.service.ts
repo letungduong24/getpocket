@@ -9,7 +9,9 @@ import { PricingConfig } from './pricing-config.entity';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { Pack } from './pack.entity';
+import { Note } from './note.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { SimpleOrderDto } from './dto/simple-order.dto';
 import { UpdatePricingDto } from './dto/update-pricing.dto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -29,6 +31,8 @@ export class ShopService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Pack)
     private readonly packRepository: Repository<Pack>,
+    @InjectRepository(Note)
+    private readonly noteRepository: Repository<Note>,
   ) {}
 
   async getPacks(): Promise<Pack[]> {
@@ -158,6 +162,28 @@ export class ShopService {
     item.sectionName = sectionName;
 
     return item;
+  }
+
+  async createSimpleOrder(dto: SimpleOrderDto, userId?: number) {
+    const order = new Order();
+    order.customerName = dto.customerName;
+    order.contactInfo = dto.contactInfo;
+    order.totalPrice = 0;
+    order.status = 'PENDING';
+    order.items = [];
+    if (userId) {
+      order.userId = userId;
+    }
+
+    const savedOrder = await this.orderRepository.save(order);
+
+    return {
+      success: true,
+      orderId: savedOrder.id,
+      totalPrice: 0,
+      message:
+        'Đơn hàng đã được tạo thành công. Vui lòng liên hệ Admin để biết thêm chi tiết.',
+    };
   }
 
   async createOrder(dto: CreateOrderDto, userId?: number) {
@@ -375,6 +401,43 @@ export class ShopService {
     pack.price = price;
     pack.description = description;
     return this.packRepository.save(pack);
+  }
+
+  async getNotes(): Promise<Note[]> {
+    return this.noteRepository.find({ where: { active: true }, order: { sortOrder: 'ASC' } });
+  }
+
+  async createNote(data: { content: string; sortOrder?: number }): Promise<Note> {
+    const maxSort = await this.noteRepository
+      .createQueryBuilder('note')
+      .select('COALESCE(MAX(note.sortOrder), 0)', 'max')
+      .getRawOne();
+    const note = new Note();
+    note.title = '';
+    note.content = data.content;
+    note.sortOrder = data.sortOrder ?? (Number(maxSort?.max) + 1);
+    note.active = true;
+    return this.noteRepository.save(note);
+  }
+
+  async deleteNote(id: number): Promise<void> {
+    const note = await this.noteRepository.findOne({ where: { id } });
+    if (!note) {
+      throw new NotFoundException(`Note #${id} không tồn tại.`);
+    }
+    await this.noteRepository.remove(note);
+  }
+
+  async updateNote(id: number, data: { title?: string; content?: string; sortOrder?: number; active?: boolean }): Promise<Note> {
+    const note = await this.noteRepository.findOne({ where: { id } });
+    if (!note) {
+      throw new NotFoundException(`Note #${id} không tồn tại.`);
+    }
+    if (data.title !== undefined) note.title = data.title;
+    if (data.content !== undefined) note.content = data.content;
+    if (data.sortOrder !== undefined) note.sortOrder = data.sortOrder;
+    if (data.active !== undefined) note.active = data.active;
+    return this.noteRepository.save(note);
   }
 
   async getPopularItems(): Promise<string[]> {

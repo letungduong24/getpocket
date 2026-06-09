@@ -5,6 +5,7 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { CartItem } from './cart-item.entity';
 import { Pack } from './pack.entity';
+import { Note } from './note.entity';
 import { ShopService } from './shop.service';
 import { ShopController } from './shop.controller';
 import { CartService } from './cart.service';
@@ -12,7 +13,7 @@ import { CartController } from './cart.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PricingConfig, Order, OrderItem, CartItem, Pack]),
+    TypeOrmModule.forFeature([PricingConfig, Order, OrderItem, CartItem, Pack, Note]),
   ],
   providers: [ShopService, CartService],
   controllers: [ShopController, CartController],

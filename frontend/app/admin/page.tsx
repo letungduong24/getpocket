@@ -3,21 +3,15 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
 import {
   ShieldAlert,
-  Download,
   Check,
   X,
   ShoppingBag,
   Clock,
-  Settings,
-  HelpCircle,
   Eye,
   TrendingUp,
   Activity,
-  Users,
-  DollarSign,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -47,51 +41,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Combobox } from "@/components/ui/combobox";
-import { SectionHeader, Pill } from "@/components/system/primitives";
-import { StatBlock, StatTile, SeeMoreLink } from "@/components/system/dashboard";
-
-interface OrderItem {
-  id: number;
-  speciesId: number;
-  speciesName: string;
-  shiny: boolean;
-  level: number;
-  ability: string;
-  nature: string;
-  heldItem: string;
-  moves: string[];
-  ivs: Record<string, number>;
-  evs: Record<string, number>;
-  trainerName: string;
-  trainerTid: number;
-  trainerSid: number;
-  sectionName?: string | null;
-}
+import { SectionHeader } from "@/components/system/primitives";
+import { StatTile } from "@/components/system/dashboard";
 
 interface Order {
   id: number;
   customerName: string;
   contactInfo: string;
-  totalPrice: string;
   status: "PENDING" | "COMPLETED" | "CANCELLED";
   createdAt: string;
-  items: OrderItem[];
 }
-
-interface PricingConfig {
-  retailPrice: number;
-  wholesalePrice: number;
-  wholesaleThreshold: number;
-}
-
-const pricingSchema = z.object({
-  retailPrice: z.number().min(0, "Giá lẻ không được âm"),
-  wholesalePrice: z.number().min(0, "Giá sỉ không được âm"),
-  wholesaleThreshold: z.number().min(1, "Ngưỡng sỉ tối thiểu là 1 Pokémon"),
-});
-
-type PricingFormData = z.infer<typeof pricingSchema>;
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -120,19 +79,10 @@ function AdminPageContent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [pricingForm, setPricingForm] = useState<PricingFormData>({
-    retailPrice: 15000,
-    wholesalePrice: 10000,
-    wholesaleThreshold: 5,
-  });
-  const [pricingErrors, setPricingErrors] = useState<Partial<Record<keyof PricingFormData, string>>>({});
-  const [pricingSuccess, setPricingSuccess] = useState(false);
 
-  const [selectedPackId, setSelectedPackId] = useState<string>("");
-  const [packPrice, setPackPrice] = useState<number>(0);
-  const [packDescription, setPackDescription] = useState<string>("");
-  const [packSuccess, setPackSuccess] = useState(false);
-  const [packError, setPackError] = useState("");
+  // Notes state
+  const [notes, setNotes] = useState<any[]>([]);
+  const [newNoteContent, setNewNoteContent] = useState("");
 
   const { data: orders = [], isLoading: isLoadingOrders } = useQuery<Order[]>({
     queryKey: ["admin-orders"],
@@ -147,25 +97,18 @@ function AdminPageContent() {
     },
   });
 
-  const { data: pricingData } = useQuery<PricingConfig>({
-    queryKey: ["admin-pricing"],
+  const { data: notesData = [] } = useQuery<any[]>({
+    queryKey: ["admin-notes"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/admin/pricing`);
-      if (!res.ok) throw new Error("Không thể tải cấu hình giá.");
+      const res = await fetch(`${API_BASE}/api/notes`);
+      if (!res.ok) throw new Error("Không thể tải ghi chú.");
       return res.json();
     },
   });
 
   useEffect(() => {
-    if (pricingData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync form to fetched data
-      setPricingForm({
-        retailPrice: pricingData.retailPrice,
-        wholesalePrice: pricingData.wholesalePrice,
-        wholesaleThreshold: pricingData.wholesaleThreshold,
-      });
-    }
-  }, [pricingData]);
+    setNotes(notesData);
+  }, [notesData]);
 
   const statusMutation = useMutation({
     mutationFn: async ({
@@ -204,176 +147,119 @@ function AdminPageContent() {
     },
   });
 
-  const pricingMutation = useMutation({
-    mutationFn: async (data: PricingFormData) => {
+  const createNoteMutation = useMutation({
+    mutationFn: async (content: string) => {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/admin/pricing`, {
-        method: "PUT",
+      const res = await fetch(`${API_BASE}/api/admin/notes`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ content }),
       });
-      if (!res.ok) throw new Error("Cập nhật giá bán sỉ/lẻ thất bại.");
+      if (!res.ok) throw new Error("Thêm thông báo thất bại.");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-pricing"] });
-      setPricingSuccess(true);
-      setTimeout(() => setPricingSuccess(false), 3000);
+      queryClient.invalidateQueries({ queryKey: ["admin-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      setNewNoteContent("");
       toast({
-        title: "Cập nhật thành công",
-        description: "Bảng cấu hình giá đã được lưu lại thành công.",
+        title: "Thêm thành công",
+        description: "Đã thêm dòng thông báo mới.",
         variant: "success",
       });
     },
     onError: (err: any) => {
       toast({
-        title: "Cập nhật giá thất bại",
+        title: "Thêm thất bại",
         description: err.message,
         variant: "destructive",
       });
     },
   });
 
-  const { data: packs = [] } = useQuery<any[]>({
-    queryKey: ["admin-packs"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/packs`);
-      if (!res.ok) throw new Error("Không thể tải danh sách gói.");
-      return res.json();
-    },
-  });
-
-  useEffect(() => {
-    if (packs.length > 0 && !selectedPackId) {
-      const first = packs[0];
-      setSelectedPackId(String(first.id));
-      setPackPrice(Number(first.price));
-      setPackDescription(first.description || "");
-    }
-  }, [packs, selectedPackId]);
-
-  const handlePackSelectChange = (idStr: string) => {
-    setSelectedPackId(idStr);
-    const found = packs.find((p) => String(p.id) === idStr);
-    if (found) {
-      setPackPrice(Number(found.price));
-      setPackDescription(found.description || "");
-    }
-  };
-
-  const packMutation = useMutation({
-    mutationFn: async ({ id, price, description }: { id: number; price: number; description: string }) => {
+  const updateNoteMutation = useMutation({
+    mutationFn: async ({ id, content }: { id: number; content: string }) => {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/admin/packs/${id}`, {
+      const res = await fetch(`${API_BASE}/api/admin/notes/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ price, description }),
+        body: JSON.stringify({ content }),
       });
-      if (!res.ok) throw new Error("Cập nhật cấu hình gói thất bại.");
+      if (!res.ok) throw new Error("Cập nhật thông báo thất bại.");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-packs"] });
-      queryClient.invalidateQueries({ queryKey: ["packs"] });
-      setPackSuccess(true);
-      setPackError("");
-      setTimeout(() => setPackSuccess(false), 3000);
+      queryClient.invalidateQueries({ queryKey: ["admin-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
       toast({
         title: "Cập nhật thành công",
-        description: "Cấu hình gói Pokémon đã được lưu thành công.",
+        description: "Nội dung thông báo đã được lưu lại.",
         variant: "success",
       });
     },
     onError: (err: any) => {
-      setPackError(err.message);
       toast({
-        title: "Cập nhật gói thất bại",
+        title: "Cập nhật thất bại",
         description: err.message,
         variant: "destructive",
       });
-    }
+    },
   });
 
-  const handlePackSubmit = (e: React.FormEvent) => {
+  const deleteNoteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/admin/notes/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Xoá thông báo thất bại.");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      toast({
+        title: "Xoá thành công",
+        description: "Đã xoá dòng thông báo.",
+        variant: "success",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Xoá thất bại",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
-    setPackSuccess(false);
-    setPackError("");
-
-    if (!selectedPackId) {
-      setPackError("Vui lòng chọn một gói để cập nhật.");
-      return;
-    }
-    if (packPrice < 0) {
-      setPackError("Giá gói không được âm.");
-      return;
-    }
-
-    packMutation.mutate({
-      id: parseInt(selectedPackId),
-      price: packPrice,
-      description: packDescription,
-    });
+    if (!newNoteContent.trim()) return;
+    createNoteMutation.mutate(newNoteContent.trim());
   };
 
-  const handlePricingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPricingErrors({});
-    setPricingSuccess(false);
+  const handleUpdateNote = (id: number, content: string) => {
+    updateNoteMutation.mutate({ id, content });
+  };
 
-    const validation = pricingSchema.safeParse(pricingForm);
-    if (!validation.success) {
-      const errorsMap: Partial<Record<keyof PricingFormData, string>> = {};
-      validation.error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          errorsMap[issue.path[0] as keyof PricingFormData] = issue.message;
-        }
-      });
-      setPricingErrors(errorsMap);
-      return;
-    }
-
-    pricingMutation.mutate(pricingForm);
+  const handleDeleteNote = (id: number) => {
+    deleteNoteMutation.mutate(id);
   };
 
   /* ---- derived ---- */
-  const totalRevenue = orders
-    .filter((o) => o.status === "COMPLETED")
-    .reduce((sum, o) => sum + parseFloat(o.totalPrice), 0);
   const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
   const completedOrders = orders.filter((o) => o.status === "COMPLETED").length;
   const completionRate = orders.length
     ? Math.round((completedOrders / orders.length) * 100)
     : 0;
-
-  const handleDownloadZip = (order: Order) => {
-    const token = localStorage.getItem("token");
-    const downloadUrl = `${API_BASE}/api/admin/orders/${order.id}/download`;
-
-    fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
-        if (!res.ok) throw new Error("Không thể tải file zip.");
-        return res.blob();
-      })
-      .then((blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `order_${order.id}_${order.customerName.replace(
-          /[^a-zA-Z0-9]/g,
-          "_"
-        )}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      })
-      .catch((e) => alert(e.message));
-  };
 
   return (
     <SidebarLayout>
@@ -387,16 +273,15 @@ function AdminPageContent() {
             </h1>
           </div>
           <p className="text-sm text-white/50">
-            Điều phối đơn hàng, cấu hình giá, xuất file và duyệt chuyển Pokémon
-            lên hệ thống 3DS / HOME.
+            Quản lý đơn hàng và nội dung thông báo trên shop.
           </p>
         </header>
 
-        {/* Stat tiles + Stat block */}
+        {/* Stat tiles */}
         <div className="">
           <div className="space-y-4">
             <SectionHeader title="Tổng quan" />
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               <AdminStatTile
                 icon={<ShoppingBag className="h-4 w-4" />}
                 label="Tổng đơn"
@@ -410,12 +295,6 @@ function AdminPageContent() {
                 tone="warning"
               />
               <AdminStatTile
-                icon={<DollarSign className="h-4 w-4" />}
-                label="Doanh thu"
-                value={`${totalRevenue.toLocaleString()}đ`}
-                tone="success"
-              />
-              <AdminStatTile
                 icon={<TrendingUp className="h-4 w-4" />}
                 label="Hoàn tất"
                 value={`${completionRate}%`}
@@ -423,143 +302,56 @@ function AdminPageContent() {
               />
             </div>
 
-             {/* Configurations */}
-            <div className="grid grid-cols-1 gap-6 pt-4 md:grid-cols-2">
-              {/* Pricing card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5 text-accent" />
-                    Cấu hình giá bán
-                  </CardTitle>
-                  <CardDescription>
-                    Cập nhật quy định áp dụng giá bán sỉ/lẻ trên shop
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handlePricingSubmit} className="space-y-3">
-                    {pricingSuccess && (
-                      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-3 text-xs font-semibold text-emerald-300">
-                        ✓ Cấu hình giá đã cập nhật thành công!
-                      </div>
-                    )}
-                    <ConfigField label="Giá bán lẻ (đ/con)" error={pricingErrors.retailPrice}>
-                      <Input
-                        type="number"
-                        value={pricingForm.retailPrice}
-                        onChange={(e) =>
-                          setPricingForm((p) => ({
-                            ...p,
-                            retailPrice: parseInt(e.target.value) || 0,
-                          }))
-                        }
-                      />
-                    </ConfigField>
-                    <ConfigField label="Giá bán sỉ (đ/con)" error={pricingErrors.wholesalePrice}>
-                      <Input
-                        type="number"
-                        value={pricingForm.wholesalePrice}
-                        onChange={(e) =>
-                          setPricingForm((p) => ({
-                            ...p,
-                            wholesalePrice: parseInt(e.target.value) || 0,
-                          }))
-                        }
-                      />
-                    </ConfigField>
-                    <ConfigField label="Ngưỡng sỉ (số lượng con)" error={pricingErrors.wholesaleThreshold}>
-                      <Input
-                        type="number"
-                        value={pricingForm.wholesaleThreshold}
-                        onChange={(e) =>
-                          setPricingForm((p) => ({
-                            ...p,
-                            wholesaleThreshold: parseInt(e.target.value) || 0,
-                          }))
-                        }
-                      />
-                    </ConfigField>
-                    <Button type="submit" className="w-full" disabled={pricingMutation.isPending}>
-                      Cập nhật giá
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+            {/* Notes config card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-accent" />
+                  Cấu hình Thông báo
+                </CardTitle>
+                <CardDescription>
+                  Quản lý nội dung thông báo hiển thị trên shop
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <form onSubmit={handleAddNote} className="flex gap-2">
+                  <Input
+                    value={newNoteContent}
+                    onChange={(e) => setNewNoteContent(e.target.value)}
+                    placeholder="Nhập nội dung thông báo mới..."
+                    className="flex-1"
+                  />
+                  <Button type="submit" disabled={createNoteMutation.isPending || !newNoteContent.trim()}>
+                    Thêm
+                  </Button>
+                </form>
 
-              {/* Pack config card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingBag className="h-5 w-5 text-accent" />
-                    Cấu hình Gói Pokémon
-                  </CardTitle>
-                  <CardDescription>
-                    Cập nhật giá và mô tả của các gói Pokémon hiện có trên shop
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handlePackSubmit} className="space-y-3">
-                    {packSuccess && (
-                      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-3 text-xs font-semibold text-emerald-300">
-                        ✓ Đã cập nhật gói thành công!
-                      </div>
-                    )}
-                    {packError && (
-                      <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
-                        Lỗi: {packError}
-                      </div>
-                    )}
-                    {packs.length === 0 ? (
-                      <p className="text-xs text-white/45 py-2">Không tìm thấy gói nào.</p>
-                    ) : (
-                      <>
-                        <ConfigField label="Chọn gói Pokémon">
-                          <Combobox
-                            options={packs.map((p) => ({
-                              value: String(p.id),
-                              label: p.name,
-                            }))}
-                            value={selectedPackId}
-                            onChange={(v) => handlePackSelectChange(String(v))}
-                            placeholder="Chọn gói Pokémon..."
-                            searchPlaceholder="Tìm gói..."
-                          />
-                        </ConfigField>
-                        <ConfigField label="Giá trọn gói (VND)">
-                          <Input
-                            type="number"
-                            value={packPrice}
-                            onChange={(e) => setPackPrice(parseInt(e.target.value) || 0)}
-                          />
-                        </ConfigField>
-                        <ConfigField label="Mô tả chi tiết gói">
-                          <textarea
-                            value={packDescription}
-                            onChange={(e) => setPackDescription(e.target.value)}
-                            rows={3}
-                            className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white outline-none transition-colors focus-visible:border-white/30 focus-visible:ring-2 focus-visible:ring-white/15 resize-none"
-                            placeholder="Nhập mô tả cho gói..."
-                          />
-                        </ConfigField>
-                        <Button type="submit" className="w-full" disabled={packMutation.isPending}>
-                          {packMutation.isPending ? "Đang cập nhật..." : "Cập nhật gói"}
-                        </Button>
-                      </>
-                    )}
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
+                <div className="space-y-2">
+                  {notes.length === 0 ? (
+                    <p className="text-xs text-white/45 py-2">Chưa có thông báo nào.</p>
+                  ) : (
+                    notes.map((note) => (
+                      <NoteLine
+                        key={note.id}
+                        note={note}
+                        onSave={handleUpdateNote}
+                        onDelete={handleDeleteNote}
+                        isSaving={updateNoteMutation.isPending}
+                      />
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
         {/* Orders queue */}
         <Card>
           <CardHeader>
-            <CardTitle>Hàng chờ đơn hàng</CardTitle>
+            <CardTitle>Danh sách đơn hàng</CardTitle>
             <CardDescription>
-              Kiểm duyệt thông tin, tải file cấu hình và cập nhật trạng thái đơn
-              hàng
+              Kiểm duyệt và cập nhật trạng thái đơn hàng
             </CardDescription>
           </CardHeader>
           <CardContent className={orders.length > 0 ? "p-0" : "p-6 pt-0"}>
@@ -581,8 +373,6 @@ function AdminPageContent() {
                     <TableHead>Mã đơn</TableHead>
                     <TableHead>Khách hàng</TableHead>
                     <TableHead>Liên hệ</TableHead>
-                    <TableHead>Số lượng</TableHead>
-                    <TableHead>Tổng tiền</TableHead>
                     <TableHead>Trạng thái</TableHead>
                     <TableHead>Ngày tạo</TableHead>
                     <TableHead className="text-right">Hành động</TableHead>
@@ -601,12 +391,6 @@ function AdminPageContent() {
                         </TableCell>
                         <TableCell className="font-mono text-xs text-white/60">
                           {order.contactInfo}
-                        </TableCell>
-                        <TableCell>
-                          <Pill tone="soft">{order.items?.length || 0} Pokémon</Pill>
-                        </TableCell>
-                        <TableCell className="font-bold text-white">
-                          {parseFloat(order.totalPrice).toLocaleString()} đ
                         </TableCell>
                         <TableCell>
                           <span
@@ -630,14 +414,6 @@ function AdminPageContent() {
                               aria-label="Xem"
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleDownloadZip(order)}
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              ZIP
                             </Button>
                             {order.status === "PENDING" && (
                               <>
@@ -704,7 +480,7 @@ function AdminPageContent() {
                 </span>
               </div>
               <DialogDescription>
-                Cấu hình chi tiết các Pokémon trong đơn hàng
+                Thông tin chi tiết đơn hàng
               </DialogDescription>
             </DialogHeader>
 
@@ -727,102 +503,12 @@ function AdminPageContent() {
               </div>
             </div>
 
-            <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-1 scrollbar-thin">
-              {Object.entries(
-                (selectedOrder.items || []).reduce<Record<string, typeof selectedOrder.items>>((acc, item) => {
-                  const section = item.sectionName || "Custom Pokémon";
-                  if (!acc[section]) acc[section] = [];
-                  acc[section].push(item);
-                  return acc;
-                }, {})
-              ).map(([sectionName, items]) => (
-                <div key={sectionName} className="space-y-2">
-                  <div className="flex items-center gap-2 border-b border-white/5 pb-1 mt-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-accent">
-                      {sectionName}
-                    </span>
-                    <span className="text-[10px] text-white/40">({items.length} Pokémon)</span>
-                  </div>
-                  <div className="space-y-2">
-                    {items.map((item) => (
-                      <Card key={item.id} size="sm">
-                        <CardContent className="space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-black/40 ring-1 ring-white/10">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={pokemonSpriteUrl(item.speciesId)}
-                                  alt={item.speciesName}
-                                  className="h-10 w-10 object-contain"
-                                />
-                              </div>
-                              <div>
-                                <h4 className="font-display text-base font-semibold text-white">
-                                  {item.shiny ? "⭐ " : ""}
-                                  {item.speciesName}{" "}
-                                  <span className="text-xs text-white/40">
-                                    Lv.{item.level}
-                                  </span>
-                                </h4>
-                                <p className="text-[11px] uppercase tracking-wider text-white/40">
-                                  {item.ability} · {item.nature}
-                                </p>
-                              </div>
-                            </div>
-                            <Pill tone="soft">#{item.speciesId}</Pill>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <Field label="Held Item" value={item.heldItem} />
-                            <Field
-                              label="Trainer"
-                              value={`${item.trainerName} (${item.trainerTid}/${item.trainerSid})`}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.03] p-2 ring-1 ring-white/[0.04]">
-                            {item.moves.map((move, mIdx) => (
-                              <div
-                                key={mIdx}
-                                className="flex items-center gap-1.5 text-xs text-white/70"
-                              >
-                                <span className="h-1.5 w-1.5 rounded-full bg-accent/60" />
-                                {move || "---"}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-2 text-[10px] font-mono">
-                            <Field
-                              label="IVs"
-                              value={`H:${item.ivs.hp} A:${item.ivs.atk} D:${item.ivs.def} SA:${item.ivs.spa} SD:${item.ivs.spd} S:${item.ivs.spe}`}
-                            />
-                            <Field
-                              label="EVs"
-                              value={`H:${item.evs.hp} A:${item.evs.atk} D:${item.evs.def} SA:${item.evs.spa} SD:${item.evs.spd} S:${item.evs.spe}`}
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between border-t border-white/5 pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDownloadZip(selectedOrder)}
-              >
-                <Download className="h-4 w-4" />
-                Tải file .PK7 (ZIP)
-              </Button>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-white/60">Giá trị đơn:</span>
-                <span className="font-display text-xl font-bold text-accent">
-                  {parseFloat(selectedOrder.totalPrice).toLocaleString()} đ
-                </span>
-              </div>
+            <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">
+              {selectedOrder.status === "PENDING"
+                ? "Đơn hàng đang chờ xử lý."
+                : selectedOrder.status === "COMPLETED"
+                ? "Đơn hàng đã hoàn thành."
+                : "Đơn hàng đã bị hủy."}
             </div>
           </DialogContent>
         </Dialog>
@@ -858,28 +544,6 @@ function AdminStatTile({
   );
 }
 
-function ConfigField({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[11px] font-semibold tracking-wider text-white/60 uppercase">
-        {label}
-      </label>
-      {children}
-      {error ? (
-        <span className="block text-[11px] text-destructive">{error}</span>
-      ) : null}
-    </div>
-  );
-}
-
 function Field({
   label,
   value,
@@ -893,6 +557,67 @@ function Field({
         {label}
       </p>
       <p className="mt-0.5 font-mono text-white/80">{value}</p>
+    </div>
+  );
+}
+
+function NoteLine({
+  note,
+  onSave,
+  onDelete,
+  isSaving,
+}: {
+  note: any;
+  onSave: (id: number, content: string) => void;
+  onDelete: (id: number) => void;
+  isSaving: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(note.content);
+
+  const handleSave = () => {
+    if (!value.trim()) return;
+    onSave(note.id, value.trim());
+    setEditing(false);
+  };
+
+  const handleCancel = () => {
+    setValue(note.content);
+    setEditing(false);
+  };
+
+  return (
+    <div className="group flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-3 transition-colors hover:border-white/20">
+      {editing ? (
+        <>
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={2}
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-sm text-white outline-none focus-visible:border-white/30 resize-none"
+          />
+          <div className="flex shrink-0 flex-col gap-1 pt-0.5">
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave} disabled={isSaving || !value.trim()}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancel}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p
+            className="min-w-0 flex-1 cursor-pointer py-1 text-sm text-white/70 transition-colors hover:text-white"
+            onClick={() => setEditing(true)}
+          >
+            {note.content}
+          </p>
+          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(note.id)}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { OrderItem } from './shop/order-item.entity';
 import { User } from './auth/user.entity';
 import { CartItem } from './shop/cart-item.entity';
 import { Pack } from './shop/pack.entity';
+import { Note } from './shop/note.entity';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { Pack } from './shop/pack.entity';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'gts_bot',
-      entities: [Pokedex, PricingConfig, Order, OrderItem, User, CartItem, Pack],
+      entities: [Pokedex, PricingConfig, Order, OrderItem, User, CartItem, Pack, Note],
       synchronize: true, // Schema created via init.sql / seed-dex.js / raw query below
       logging: true,
     }),
@@ -171,7 +172,21 @@ export class AppModule implements OnApplicationBootstrap {
         console.log('[AppModule] Pack Pokémon Champions is already seeded.');
       }
 
-      // 5. Clean up removed moves from pokemon_dex if they exist
+      // 5. Seed default shop notes if not exists
+      const notesCount = await this.dataSource.query(`SELECT COUNT(*) FROM shop_notes;`);
+      if (parseInt(notesCount[0].count, 10) === 0) {
+        await this.dataSource.query(`
+          INSERT INTO shop_notes (title, content, sort_order) VALUES
+          ('Thông báo', 'Vì toàn bộ Pokemon được chuyển trực tiếp từ Pokemon Bank, người mua cần phải có tài khoản Pokemon Home Premium để nhận Pokemon. Shop có hỗ trợ nâng cấp Premium không phụ phí (lấy giá gốc của Nintendo nếu mua Pack Pokemon bên shop)', 1),
+          ('Giá nâng cấp Pokemon Home', '90.000vnđ/1 tháng - 140.000vnđ/3 tháng - 420.000VNĐ/12 tháng', 2),
+          ('Liên hệ', 'Sau khi đặt hàng, shop sẽ liên hệ với quý khách qua thông tin liên lạc để xác nhận đơn hàng và chốt đơn.', 3);
+        `);
+        console.log('[AppModule] Seeding of shop_notes completed.');
+      } else {
+        console.log('[AppModule] Shop notes already seeded.');
+      }
+
+      // 6. Clean up removed moves from pokemon_dex if they exist
       const removedMoves = [
         'Razor Wind', 'Karate Chop', 'Double Slap', 'Comet Punch', 'Jump Kick', 'Rolling Kick', 'Twineedle', 'Sonic Boom',
         'Dragon Rage', 'Meditate', 'Rage', 'Barrier', 'Bide', 'Mirror Move', 'Egg Bomb', 'Bone Club', 'Clamp', 'Spike Cannon',

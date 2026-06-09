@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -39,7 +39,6 @@ import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/components/auth-provider";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
-import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -257,29 +256,15 @@ export default function ShopClient() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [successOrder, setSuccessOrder] = useState<{ id: number; totalPrice: number } | null>(null);
 
-  // Pack states
-  const [viewingPack, setViewingPack] = useState<any | null>(null);
-  const [packShiny, setPackShiny] = useState(true);
+  // Order dialog state
+  const [showOrderDialog, setShowOrderDialog] = useState(false);
+  const [orderName, setOrderName] = useState("");
+  const [orderContact, setOrderContact] = useState("");
+  const [orderErrors, setOrderErrors] = useState<Partial<Record<"customerName" | "contactInfo", string>>>({});
 
   // Pokemon detail (read-only view from pack data)
   const [viewingPokemon, setViewingPokemon] = useState<any | null>(null);
-
-  // Reset packShiny when viewingPack changes
-  useEffect(() => {
-    setPackShiny(true);
-  }, [viewingPack]);
-
-  // Fetch event packs
-  const { data: packs = [], isLoading: isLoadingPacks } = useQuery<any[]>({
-    queryKey: ["packs"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/packs`);
-      if (!res.ok) throw new Error("Không thể tải các gói.");
-      return res.json();
-    },
-  });
 
   const { data: items = ["None"] } = useQuery<string[]>({
     queryKey: ["items"],
@@ -310,6 +295,15 @@ export default function ShopClient() {
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/admin/pricing`);
       if (!res.ok) throw new Error("Không thể tải cấu hình giá.");
+      return res.json();
+    },
+  });
+
+  const { data: notes = [] } = useQuery<any[]>({
+    queryKey: ["notes"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/notes`);
+      if (!res.ok) throw new Error("Không thể tải ghi chú.");
       return res.json();
     },
   });
@@ -512,44 +506,64 @@ export default function ShopClient() {
     setIsValidated(false);
   };
 
-  const handleAddPackToCart = async (pack: any, overrideShinyVal?: boolean) => {
+  const simpleOrderMutation = useMutation<
+    { orderId: number; totalPrice: number },
+    Error,
+    Record<string, unknown>
+  >({
+    mutationFn: async (payload) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/orders/simple`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Đặt hàng thất bại.");
+      return data;
+    },
+    onSuccess: () => {
+      setShowOrderDialog(false);
+      setOrderName("");
+      setOrderContact("");
+      setOrderErrors({});
+      toast({
+        title: "Đặt hàng thành công",
+        description: "Shop sẽ liên hệ lại cho bạn trong thời gian sớm nhất.",
+        variant: "success",
+      });
+    },
+    onError: (err) => {
+      toast({
+        title: "Lỗi gửi đơn hàng",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSimpleOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Partial<Record<"customerName" | "contactInfo", string>> = {};
+    if (!orderName.trim()) errors.customerName = "Vui lòng nhập tên của bạn";
+    if (!orderContact.trim()) errors.contactInfo = "Vui lòng nhập phương thức liên hệ (Zalo, Facebook, SĐT)";
+    setOrderErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     if (!user) {
-      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để thêm gói vào giỏ hàng.", variant: "destructive" });
+      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để đặt hàng.", variant: "destructive" });
       router.push("/login");
       return;
     }
-    const isShiny = typeof overrideShinyVal === "boolean" ? overrideShinyVal : true;
-    const packConfig = {
-      isPack: true,
-      packId: pack.id,
-      speciesId: 9999,
-      speciesName: pack.name,
-      speciesSpriteUrl: pack.items[0]?.speciesSpriteUrl || null,
-      shiny: isShiny,
-      level: 100,
-      gender: "U",
-      ability: "Multiple",
-      nature: "Event",
-      heldItem: "Multiple",
-      moves: [],
-      ivs: {},
-      evs: {},
-      trainerName: "Multiple",
-      trainerTid: 0,
-      trainerSid: 0,
-      price: Number(pack.price),
-      items: pack.items.map((item: any) => ({ ...item, shiny: true })),
-      description: pack.description,
-    };
-    await addToCart(packConfig as any);
-    toast({
-      title: "Đã thêm gói vào giỏ hàng",
-      description: `Đã thêm gói ${pack.name} vào giỏ hàng thành công.`,
-      variant: "success",
+
+    simpleOrderMutation.mutate({
+      customerName: orderName,
+      contactInfo: orderContact,
     });
   };
-
-  const cartInfo = useMemo(() => getCartPricing(cart, pricing), [cart, pricing]);
 
   // Checkout mutation removed — checkout now happens on the /cart page.
 
@@ -559,11 +573,6 @@ export default function ShopClient() {
   return (
     <SidebarLayout>
       <div className="space-y-6">
-        {successOrder ? (
-          <SuccessCard order={successOrder} onContinue={() => setSuccessOrder(null)} />
-        ) : (
-          <>
-            {/* ROW 1: Pricing strip */}
             {/* <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/[0.04]">
               <StatPill label="Giá lẻ" value={`${pricing.retailPrice.toLocaleString()}đ`} />
               <StatPill
@@ -578,99 +587,42 @@ export default function ShopClient() {
               />
             </div> */}
 
-            {/* Featured Event Packs Section */}
-            {packs.length > 0 && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  {packs.map((pack) => (
-                    <div
-                      key={pack.id}
-                      className="flex flex-col h-full relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] hover:ring-[#ff4655]/40 transition-all duration-300"
-                    >
-                     
-
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-md bg-[#ff4655]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ff4655] ring-1 ring-[#ff4655]/30">
-                              HOT BUY
-                            </span>
-                          </div>
-                          <h3 className="font-display text-2xl font-black tracking-tight text-white uppercase mt-1.5">
-                            {pack.name}
-                          </h3>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[11px] font-bold uppercase text-white/40 tracking-wider">Giá trọn gói</div>
-                          <div className="font-display text-2xl font-black text-[#ff4655]">
-                            {Number(pack.price).toLocaleString()}đ
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <p className="mt-3 text-sm text-white/60 leading-relaxed max-w-xl flex-1">
-                        {pack.description}
-                      </p>
-
-                      {/* Preview Grid Hidden - details available in Xem chi tiết modal */}
-
-                      {/* Action buttons */}
-                      <div className="mt-6">
-                        <Button
-                          size="sm"
-                          type="button"
-                          className="w-full bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
-                          onClick={() => handleAddPackToCart(pack)}
-                        >
-                          Thêm vào giỏ
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  <div
-                      className="flex flex-col justify-between relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] hover:ring-[#ff4655]/40 transition-all duration-300"
-                    >
-                      
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <h3 className="font-display text-2xl font-black tracking-tight text-white uppercase mt-1.5">
-                            Lưu ý mua hàng
-                          </h3>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <div className="flex-1">
-                        <p className="mt-3 text-sm text-white/60 leading-relaxed">
-                          Vì toàn bộ Pokemon được chuyển trực tiếp từ Pokemon Bank, người mua cần phải có tài khoản Pokemon Home Premium để nhận Pokemon. Shop có hỗ trợ nâng cấp Premium không phụ phí (lấy giá gốc của Nintendo nếu mua Pack Pokemon bên shop)
-                        </p>
-                        <p className="mt-3 text-sm text-white/60 leading-relaxed">
-                          Giá nâng cấp Pokemon Home: 90.000vnđ/1 tháng - 140.000vnđ/3 tháng - 420.000VNĐ/12 tháng
-                        </p>
-                        <p className="mt-3 text-sm text-white/60 leading-relaxed">
-                          Sau khi đặt hàng, shop sẽ liên hệ với quý khách qua thông tin liên lạc để xác nhận đơn hàng và chốt đơn.
-                        </p>
-                      </div>
-
-                      {/* Preview Grid Hidden - details available in Xem chi tiết modal */}
-
-                      {/* Action buttons */}
-                      <Link href={`https://www.facebook.com/nam.tran.665625/`} className="mt-6">
-                        <Button
-                          size="sm"
-                          type="button"
-                          className="w-full bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
-                        >
-                          Liên hệ tư vấn
-                        </Button>
-                      </Link>
-                    </div>
+            {/* Thông báo Card */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] transition-all duration-300">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="font-display text-2xl font-black tracking-tight text-white uppercase mt-1.5">
+                    Thông báo
+                  </h3>
                 </div>
               </div>
-            )}
+
+              <div className="flex-1 mt-3 space-y-3">
+                {notes.map((note: any) => (
+                  <p key={note.id} className="text-sm text-white/60 leading-relaxed">
+                    {note.content}
+                  </p>
+                ))}
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  size="sm"
+                  type="button"
+                  className="w-full bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
+                  onClick={() => {
+                    if (!user) {
+                      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để đặt hàng.", variant: "destructive" });
+                      router.push("/login");
+                      return;
+                    }
+                    setShowOrderDialog(true);
+                  }}
+                >
+                  Đặt hàng
+                </Button>
+              </div>
+            </div>
 
             {/* ROW 2: Pokédex Nhà Vô Địch — search + type filter + full grid */}
             <div className="space-y-4">
@@ -759,8 +711,6 @@ export default function ShopClient() {
                 }
               />
             </div>
-          </>
-        )}
       </div>
 
       {/* ---------------- Pokemon Detail Dialog (from Pack data) ---------------- */}
@@ -857,157 +807,74 @@ export default function ShopClient() {
         </Dialog>
       )}
 
-      {/* ---------------- Pack Details Dialog ---------------- */}
-      {viewingPack && (
-        <Dialog open={!!viewingPack} onOpenChange={(o) => !o && setViewingPack(null)}>
-          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-            <DialogHeader className="border-b border-white/5 pb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <DialogTitle className="flex items-center gap-2 text-xl font-bold uppercase tracking-tight text-white">
-                    <Sparkles className="h-5 w-5 text-[#ff4655]" />
-                    {viewingPack.name}
-                  </DialogTitle>
-                  <DialogDescription className="text-white/60">
-                    {viewingPack.description}
-                  </DialogDescription>
-                </div>
-                <div className="shrink-0 flex items-center gap-2 bg-white/[0.04] p-2 rounded-xl ring-1 ring-white/10 mt-1">
-                  <span className="text-xs font-semibold text-white/60">All Shiny:</span>
-                  <Button
-                    size="sm"
-                    variant={packShiny ? "default" : "outline"}
-                    className="h-8 px-3"
-                    onClick={() => setPackShiny(!packShiny)}
-                  >
-                    <Sparkles className={cn("h-3.5 w-3.5 mr-1", packShiny && "animate-pulse")} />
-                    {packShiny ? "Bật" : "Tắt"}
-                  </Button>
-                </div>
-              </div>
+      {/* ---------------- Simple Order Dialog ---------------- */}
+      {showOrderDialog && (
+        <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Đặt hàng</DialogTitle>
+              <DialogDescription>
+                Nhập thông tin liên hệ của bạn, shop sẽ liên hệ để xác nhận đơn hàng.
+              </DialogDescription>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 scrollbar-thin">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {viewingPack.items.map((pk: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="relative overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06] flex flex-col justify-between"
-                  >
-                    <div className="flex gap-4">
-                      {/* Sprite */}
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black/35 border border-white/5">
-                        <img
-                          src={resolveSprite({ natDex: pk.speciesId, name: pk.speciesName, shiny: packShiny })}
-                          alt={pk.speciesName}
-                          className="h-12 w-12 object-contain"
-                        />
-                      </div>
-                      
-                      {/* Name & Basic Info */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-display text-base font-bold text-white leading-tight">
-                            {pk.speciesName}
-                          </h4>
-                          {packShiny && (
-                            <span className="rounded bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-300 ring-1 ring-amber-400/20">
-                              Shiny
-                            </span>
-                          )}
-                          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold text-white/50">
-                            Lv.{pk.level}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-xs text-white/50 space-y-0.5">
-                          <p>Đặc tính: <strong className="text-white">{pk.ability}</strong></p>
-                          <p>Tính cách: <strong className="text-white">{pk.nature}</strong></p>
-                          <p>Vật phẩm: <strong className="text-white">{pk.heldItem || "None"}</strong></p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Moves */}
-                    <div className="mt-3">
-                      <div className="text-[10px] font-bold uppercase text-white/40 mb-1.5 tracking-wider">Chiêu thức</div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {pk.moves.map((move: string, mIdx: number) => (
-                          <div
-                            key={mIdx}
-                            className="rounded-lg bg-black/20 px-2 py-1 text-center text-[11px] font-medium text-white/70 truncate border border-white/5"
-                          >
-                            {move || "—"}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Trainer & Legality */}
-                    <div className="mt-3 pt-3 border-t border-white/5 grid grid-cols-3 gap-2 text-[10px]">
-                      <div>
-                        <span className="block text-white/40">Người nhận (OT)</span>
-                        <strong className="text-white/80">{pk.trainerName}</strong>
-                      </div>
-                      <div>
-                        <span className="block text-white/40">TID</span>
-                        <strong className="text-white/80">{pk.trainerTid}</strong>
-                      </div>
-                      <div>
-                        <span className="block text-white/40">SID</span>
-                        <strong className="text-white/80">{pk.trainerSid}</strong>
-                      </div>
-                    </div>
-
-                    {/* IVs & EVs */}
-                    <div className="mt-2.5 space-y-2">
-                      <div>
-                        <span className="text-[9px] font-bold uppercase text-white/30 tracking-wider">Chỉ số IVs:</span>
-                        <div className="flex gap-1 text-[10px] mt-0.5">
-                          {Object.entries(pk.ivs || {}).map(([stat, val]: any) => (
-                            <div key={stat} className="flex-1 text-center bg-white/5 rounded py-0.5">
-                              <span className="block text-[8px] uppercase text-white/40">{stat}</span>
-                              <span className="font-bold text-white">{val}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-bold uppercase text-white/30 tracking-wider">Chỉ số EVs:</span>
-                        <div className="flex gap-1 text-[10px] mt-0.5">
-                          {Object.entries(pk.evs || {}).map(([stat, val]: any) => (
-                            <div key={stat} className="flex-1 text-center bg-white/5 rounded py-0.5">
-                              <span className="block text-[8px] uppercase text-white/40">{stat}</span>
-                              <span className="font-bold text-white">{val}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            <form onSubmit={handleSimpleOrder} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold tracking-wider text-white/60 uppercase">
+                  Tên của bạn
+                </label>
+                <Input
+                  placeholder="Nhập họ và tên..."
+                  value={orderName}
+                  onChange={(e) => setOrderName(e.target.value)}
+                  className={cn(
+                    orderErrors.customerName &&
+                      "border-destructive focus-visible:ring-destructive/30",
+                  )}
+                />
+                {orderErrors.customerName && (
+                  <span className="text-xs text-destructive">
+                    {orderErrors.customerName}
+                  </span>
+                )}
               </div>
-            </div>
 
-            <div className="border-t border-white/5 pt-4 flex gap-3">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold tracking-wider text-white/60 uppercase">
+                  Liên hệ (Zalo / Facebook / SĐT)
+                </label>
+                <Input
+                  placeholder="Link Facebook hoặc SĐT Zalo..."
+                  value={orderContact}
+                  onChange={(e) => setOrderContact(e.target.value)}
+                  className={cn(
+                    orderErrors.contactInfo &&
+                      "border-destructive focus-visible:ring-destructive/30",
+                  )}
+                />
+                {orderErrors.contactInfo && (
+                  <span className="text-xs text-destructive">
+                    {orderErrors.contactInfo}
+                  </span>
+                )}
+              </div>
+
+              <div className="rounded-2xl bg-white/[0.04] p-4 text-xs text-white/60">
+                <p className="font-semibold text-white">Hướng dẫn:</p>
+                <p className="mt-1">
+                  Sau khi gửi đơn hàng, Admin sẽ liên hệ sớm nhất để tiến hành giao dịch và hỗ trợ bạn qua phương thức liên hệ bạn đã cung cấp.
+                </p>
+              </div>
+
               <Button
-                variant="outline"
-                className="flex-1"
-                type="button"
-                onClick={() => setViewingPack(null)}
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={simpleOrderMutation.isPending}
               >
-                Đóng
+                {simpleOrderMutation.isPending ? "Đang gửi..." : "Gửi đơn hàng"}
               </Button>
-              <Button
-                className="flex-1 bg-[#ff4655] hover:bg-[#e03e4c] text-white font-bold"
-                type="button"
-                onClick={() => {
-                  handleAddPackToCart(viewingPack, packShiny);
-                  setViewingPack(null);
-                }}
-              >
-                Thêm toàn bộ vào giỏ hàng
-              </Button>
-            </div>
+            </form>
           </DialogContent>
         </Dialog>
       )}

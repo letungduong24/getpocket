@@ -10,8 +10,6 @@ import {
   Clock,
   XCircle,
   ShoppingBag,
-  DollarSign,
-  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,33 +33,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { SectionHeader, Pill } from "@/components/system/primitives";
-import { StatBlock, StatTile, SeeMoreLink } from "@/components/system/dashboard";
-
-interface OrderItem {
-  id: number;
-  speciesId: number;
-  speciesName: string;
-  shiny: boolean;
-  level: number;
-  ability: string;
-  nature: string;
-  heldItem: string;
-  moves: string[];
-  ivs: Record<string, number>;
-  evs: Record<string, number>;
-  trainerName: string;
-  trainerTid: number;
-  trainerSid: number;
-}
+import { StatTile } from "@/components/system/dashboard";
 
 interface Order {
   id: number;
   customerName: string;
   contactInfo: string;
-  totalPrice: string;
   status: "PENDING" | "COMPLETED" | "CANCELLED";
   createdAt: string;
-  items: OrderItem[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -83,10 +62,6 @@ const toneClass: Record<"success" | "warning" | "danger", string> = {
 
 import { AuthGuard } from "@/components/auth-provider";
 
-function pokemonSpriteUrl(speciesId: number) {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${speciesId}.png`;
-}
-
 function MyOrdersPageContent() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -103,9 +78,6 @@ function MyOrdersPageContent() {
     },
   });
 
-  const totalSpent = orders
-    .filter((o) => o.status === "COMPLETED")
-    .reduce((sum, o) => sum + parseFloat(o.totalPrice), 0);
   const pendingCount = orders.filter((o) => o.status === "PENDING").length;
   const completedCount = orders.filter((o) => o.status === "COMPLETED").length;
 
@@ -129,7 +101,7 @@ function MyOrdersPageContent() {
         <div className="">
           <div className="space-y-4">
             <SectionHeader title="Tổng quan" />
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-2">
               <StatTile
                 icon={<ShoppingBag className="h-4 w-4" />}
                 label="Tổng đơn"
@@ -141,12 +113,6 @@ function MyOrdersPageContent() {
                 label="Đang chờ"
                 value={pendingCount}
                 tone="warning"
-              />
-              <StatTile
-                icon={<DollarSign className="h-4 w-4" />}
-                label="Đã chi"
-                value={`${totalSpent.toLocaleString()}đ`}
-                tone="success"
               />
             </div>
 
@@ -186,8 +152,6 @@ function MyOrdersPageContent() {
                           <TableHead>Mã đơn</TableHead>
                           <TableHead>Người nhận</TableHead>
                           <TableHead>Liên hệ</TableHead>
-                          <TableHead>Số lượng</TableHead>
-                          <TableHead>Tổng tiền</TableHead>
                           <TableHead>Trạng thái</TableHead>
                           <TableHead>Ngày tạo</TableHead>
                           <TableHead className="text-right">Chi tiết</TableHead>
@@ -207,14 +171,6 @@ function MyOrdersPageContent() {
                               </TableCell>
                               <TableCell className="font-mono text-xs text-white/60">
                                 {order.contactInfo}
-                              </TableCell>
-                              <TableCell>
-                                <Pill tone="soft">
-                                  {order.items?.length || 0} Pokémon
-                                </Pill>
-                              </TableCell>
-                              <TableCell className="font-bold text-white">
-                                {parseFloat(order.totalPrice).toLocaleString()} đ
                               </TableCell>
                               <TableCell>
                                 <span
@@ -297,101 +253,14 @@ function MyOrdersPageContent() {
               </div>
             </div>
 
-            <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1 scrollbar-thin">
-              {selectedOrder.items?.map((item) => (
-                <Card key={item.id} size="sm">
-                  <CardContent className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-black/40 ring-1 ring-white/10">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={pokemonSpriteUrl(item.speciesId)}
-                            alt={item.speciesName}
-                            className="h-10 w-10 object-contain"
-                          />
-                        </div>
-                        <div>
-                          <h4 className="font-display text-base font-semibold text-white">
-                            {item.shiny ? "⭐ " : ""}
-                            {item.speciesName}{" "}
-                            <span className="text-xs text-white/40">
-                              Lv.{item.level}
-                            </span>
-                          </h4>
-                          <p className="text-[11px] uppercase tracking-wider text-white/40">
-                            {item.ability} · {item.nature}
-                          </p>
-                        </div>
-                      </div>
-                      <Pill tone="soft">#{item.speciesId}</Pill>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
-                          Held Item
-                        </p>
-                        <p className="mt-0.5 font-mono text-white/80">
-                          {item.heldItem}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
-                          Trainer
-                        </p>
-                        <p className="mt-0.5 font-mono text-white/80">
-                          {item.trainerName} ({item.trainerTid}/{item.trainerSid})
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.03] p-2 ring-1 ring-white/[0.04]">
-                      {item.moves.map((move, mIdx) => (
-                        <div
-                          key={mIdx}
-                          className="flex items-center gap-1.5 text-xs text-white/70"
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-accent/60" />
-                          {move || "---"}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-2 text-[10px] font-mono">
-                      <div>
-                        <p className="font-bold uppercase tracking-wider text-white/40">
-                          IVs
-                        </p>
-                        <p className="text-white/80">
-                          H:{item.ivs.hp} A:{item.ivs.atk} D:{item.ivs.def} SA:
-                          {item.ivs.spa} SD:{item.ivs.spd} S:{item.ivs.spe}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-bold uppercase tracking-wider text-white/40">
-                          EVs
-                        </p>
-                        <p className="text-white/80">
-                          H:{item.evs.hp} A:{item.evs.atk} D:{item.evs.def} SA:
-                          {item.evs.spa} SD:{item.evs.spd} S:{item.evs.spe}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {selectedOrder.status === "PENDING" && (
-              <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">
-                Đơn hàng đang ở trạng thái{" "}
-                <strong className="text-white">Đang chờ giao</strong>. Admin sẽ liên hệ sớm nhất với bạn qua Zalo/Facebook/SĐT để tiến hành giao dịch.
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 border-t border-white/5 pt-4">
-              <span className="text-sm text-white/60">Tổng thanh toán:</span>
-              <span className="font-display text-xl font-bold text-accent">
-                {parseFloat(selectedOrder.totalPrice).toLocaleString()} đ
-              </span>
+            <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">
+              {selectedOrder.status === "PENDING" ? (
+                <>Đơn hàng đang ở trạng thái <strong className="text-white">Đang chờ giao</strong>. Admin sẽ liên hệ sớm nhất với bạn qua Zalo/Facebook/SĐT để tiến hành giao dịch.</>
+              ) : selectedOrder.status === "COMPLETED" ? (
+                <>Đơn hàng đã <strong className="text-white">hoàn thành</strong>.</>
+              ) : (
+                <>Đơn hàng đã bị <strong className="text-white">hủy</strong>.</>
+              )}
             </div>
           </DialogContent>
         </Dialog>

@@ -4,6 +4,7 @@ import {
   Get,
   Put,
   Patch,
+  Delete,
   Body,
   Param,
   Res,
@@ -15,6 +16,7 @@ import {
 import type { Response } from 'express';
 import { ShopService } from './shop.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { SimpleOrderDto } from './dto/simple-order.dto';
 import { UpdatePricingDto } from './dto/update-pricing.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -48,6 +50,15 @@ export class ShopController {
     @CurrentUser('sub') userId: number,
   ) {
     return this.shopService.createOrder(dto, userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('orders/simple')
+  async submitSimpleOrder(
+    @Body() dto: SimpleOrderDto,
+    @CurrentUser('sub') userId: number,
+  ) {
+    return this.shopService.createSimpleOrder(dto, userId);
   }
 
   @UseGuards(AuthGuard)
@@ -98,6 +109,38 @@ export class ShopController {
         });
       }
     }
+  }
+
+  @Get('notes')
+  async getNotes() {
+    return this.shopService.getNotes();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/notes')
+  async createNote(@Body() body: { content: string; sortOrder?: number }) {
+    if (!body.content?.trim()) {
+      throw new BadRequestException('Nội dung thông báo không được để trống.');
+    }
+    return this.shopService.createNote(body);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Put('admin/notes/:id')
+  async updateNote(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { title?: string; content?: string; sortOrder?: number; active?: boolean },
+  ) {
+    return this.shopService.updateNote(id, body);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('admin/notes/:id')
+  async deleteNote(@Param('id', ParseIntPipe) id: number) {
+    return this.shopService.deleteNote(id);
   }
 
   @Get('admin/pricing')
