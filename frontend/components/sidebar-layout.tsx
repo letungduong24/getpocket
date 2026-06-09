@@ -4,10 +4,9 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import {
   Store,
-  History,
+  ClipboardList,
   ShieldAlert,
   LogOut,
-  LogIn,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,7 +34,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { id: "store", href: "/", label: "Cửa hàng Pokémon", icon: Store },
-  { id: "orders", href: "/my-orders", label: "Đơn hàng của tôi", icon: History },
+  { id: "orders", href: "/orders", label: "Đơn hàng", icon: ClipboardList, adminOnly: true },
   { id: "admin", href: "/admin", label: "Quản trị (Admin)", icon: ShieldAlert, adminOnly: true },
 ];
 
@@ -55,9 +54,12 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const visibleNavItems = NAV_ITEMS.filter((item) => {
     if (item.adminOnly) return user?.role === "ADMIN";
-    if (item.id === "orders") return !!user;
     return true;
   });
+
+  if (!user) {
+    return <div className="p-6">{children}</div>;
+  }
 
   const leftRail = (
     <LeftRail
@@ -89,25 +91,14 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </>
       }
       bottom={
-        user ? (
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="Đăng xuất"
-            className="mt-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white/50 transition-all hover:bg-white/[0.06] hover:text-white lg:mt-2 lg:h-12 lg:w-12"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => (window.location.href = "/login")}
-            aria-label="Đăng nhập"
-            className="mt-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[#ff4655] hover:text-[#e03e4c] ring-1 ring-[#ff4655]/20 hover:ring-[#ff4655]/40 transition-all hover:bg-white/[0.06] lg:mt-2 lg:h-12 lg:w-12"
-          >
-            <LogIn className="h-5 w-5" />
-          </button>
-        )
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Đăng xuất"
+          className="mt-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white/50 transition-all hover:bg-white/[0.06] hover:text-white lg:mt-2 lg:h-12 lg:w-12"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
       }
     />
   );

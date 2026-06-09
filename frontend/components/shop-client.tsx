@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
-  CheckCircle,
   AlertTriangle,
   Sparkles,
   Dna,
@@ -32,12 +31,8 @@ import {
   IconBadge,
   SearchBar,
 } from "@/components/system/primitives";
-import { StatPill } from "@/components/system/primitives";
 import { GameTile } from "@/components/system/dashboard";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useCart } from "@/hooks/use-cart";
-import { useAuth } from "@/components/auth-provider";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 
 /* ------------------------------------------------------------------ */
@@ -81,11 +76,7 @@ interface CustomConfig {
   trainerSid: number;
 }
 
-interface PricingConfig {
-  retailPrice: number;
-  wholesalePrice: number;
-  wholesaleThreshold: number;
-}
+
 
 /* ------------------------------------------------------------------ */
 /* Zod Schemas                                                        */
@@ -123,28 +114,6 @@ const NATURES = [
   "Adamant", "Jolly", "Modest", "Timid", "Bold", "Impish", "Calm", "Careful",
   "Hardy", "Brave", "Quiet", "Relaxed", "Sassy", "Hasty", "Naive", "Mild",
   "Rash", "Gentle", "Lax", "Lonely", "Naughty", "Docile", "Serious", "Bashful", "Quirky",
-];
-
-const POPULAR_ITEMS = [
-  "None", "Leftovers", "Life Orb", "Choice Band", "Choice Specs", "Choice Scarf",
-  "Focus Sash", "Assault Vest", "Eviolite", "Rocky Helmet", "Black Sludge",
-  "Light Clay", "Air Balloon", "Weakness Policy", "Expert Belt", "Safety Goggles",
-  "Flame Orb", "Toxic Orb", "Red Card", "Eject Button", "Damp Rock", "Heat Rock",
-  "Smooth Rock", "Icy Rock", "Light Ball", "Thick Club", "Lucky Egg", "Amulet Coin",
-  "Gold Bottle Cap", "Silver Bottle Cap", "Ability Capsule", "Ability Patch",
-  "Master Ball", "Beast Ball", "Cherish Ball", "Luxury Ball", "Premier Ball",
-  "Friend Ball", "Heavy Ball", "Level Ball", "Love Ball", "Lure Ball", "Moon Ball", "Fast Ball",
-  "Sitrus Berry", "Lum Berry", "Figy Berry", "Wiki Berry", "Mago Berry", "Aguav Berry", "Iapapa Berry",
-  "Normalium Z", "Firium Z", "Waterium Z", "Grassium Z", "Electrium Z", "Icium Z",
-  "Fightinium Z", "Poisonium Z", "Groundium Z", "Flyinium Z", "Psychium Z", "Buginium Z",
-  "Rockium Z", "Ghostium Z", "Dragonium Z", "Darkinium Z", "Steelium Z", "Fairium Z",
-  "Venusaurite", "Charizardite X", "Charizardite Y", "Blastoisite", "Beedrillite",
-  "Pidgeotite", "Alakazite", "Slowbronite", "Gengarite", "Kangaskhanite", "Pinsirite",
-  "Gyaradosite", "Aerodactylite", "Ampharosite", "Steelixite", "Scizorite",
-  "Heracronite", "Houndoominite", "Tyranitarite", "Gardevoirite", "Sableyite",
-  "Aggronite", "Medichamite", "Manectrite", "Sharpedonite", "Cameruptite",
-  "Altarianite", "Banettite", "Absolite", "Glalitite", "Lopunnite", "Garchompite",
-  "Lucarionite", "Abomasnowite", "Galladite", "Audinite",
 ];
 
 const POKEMON_TYPES = [
@@ -251,10 +220,6 @@ export default function ShopClient() {
   const [isValidated, setIsValidated] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // Shopping cart — persists to backend when logged in, falls back to localStorage.
-  const { cart, addToCart } = useCart();
-  const { user } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
   // Order dialog state
@@ -265,15 +230,6 @@ export default function ShopClient() {
 
   // Pokemon detail (read-only view from pack data)
   const [viewingPokemon, setViewingPokemon] = useState<any | null>(null);
-
-  const { data: items = ["None"] } = useQuery<string[]>({
-    queryKey: ["items"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/pokemon/items`);
-      if (!res.ok) throw new Error("Không thể tải danh sách vật phẩm.");
-      return res.json();
-    },
-  });
 
   // Server-side pokedex query (filter happens in the backend)
   const { data: pokemonList = [], isLoading: isLoadingPokedex } = useQuery<Pokemon[]>({
@@ -286,15 +242,6 @@ export default function ShopClient() {
       const url = `${API_BASE}/api/pokemon${qs ? `?${qs}` : ""}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Không thể tải danh sách Pokédex.");
-      return res.json();
-    },
-  });
-
-  const { data: pricing = { retailPrice: 15000, wholesalePrice: 10000, wholesaleThreshold: 5 } } = useQuery<PricingConfig>({
-    queryKey: ["pricing"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/admin/pricing`);
-      if (!res.ok) throw new Error("Không thể tải cấu hình giá.");
       return res.json();
     },
   });
@@ -427,7 +374,7 @@ export default function ShopClient() {
       if (data.valid) {
         toast({
           title: "Hợp lệ",
-          description: "Pokémon hợp pháp! Bây giờ bạn có thể thêm vào giỏ hàng.",
+          description: "Pokémon hợp pháp! Bạn có thể đặt hàng ngay.",
           variant: "success",
         });
       } else {
@@ -488,24 +435,6 @@ export default function ShopClient() {
     });
   };
 
-  const handleAddToCart = async () => {
-    if (!isValidated) return;
-    if (!user) {
-      toast({ title: "Vui lòng đăng nhập", description: "Bạn cần đăng nhập để thêm Pokémon vào giỏ hàng.", variant: "destructive" });
-      router.push("/login");
-      return;
-    }
-    await addToCart(JSON.parse(JSON.stringify(config)) as unknown as Parameters<typeof addToCart>[0]);
-    toast({
-      title: "Đã thêm vào giỏ hàng",
-      description: `Đã thêm Pokémon ${config.speciesName} vào giỏ hàng thành công.`,
-      variant: "success",
-    });
-    setSelectedPokemon(null);
-    setValidationResult(null);
-    setIsValidated(false);
-  };
-
   const simpleOrderMutation = useMutation<
     { orderId: number; totalPrice: number },
     Error,
@@ -555,29 +484,13 @@ export default function ShopClient() {
     });
   };
 
-  // Checkout mutation removed — checkout now happens on the /cart page.
-
   const totalEv = totalEvs(config.evs);
   const evsOver = totalEv > 510;
 
   return (
     <SidebarLayout>
       <div className="space-y-6">
-            {/* <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-white/[0.04] p-4 ring-1 ring-white/[0.04]">
-              <StatPill label="Giá lẻ" value={`${pricing.retailPrice.toLocaleString()}đ`} />
-              <StatPill
-                separator
-                label={`Giá sỉ (≥ ${pricing.wholesaleThreshold} con)`}
-                value={`${pricing.wholesalePrice.toLocaleString()}đ`}
-              />
-              <StatPill
-                separator
-                label="Giỏ hàng"
-                value={`${cartInfo.count} món · ${cartInfo.total.toLocaleString()}đ`}
-              />
-            </div> */}
-
-            {/* Thông báo Card */}
+          {/* Thông báo Card */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2a0e12] via-[#1c070a] to-[#120406] p-6 ring-1 ring-white/[0.08] transition-all duration-300">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
@@ -868,7 +781,6 @@ interface ConfiguratorBodyProps {
   onStatChange: (statType: "ivs" | "evs", stat: keyof StatDict, value: number) => void;
   onMoveChange: (index: number, val: string) => void;
   onValidate: () => void;
-  onAddToCart: () => void;
 }
 
 function ConfiguratorBody({
@@ -885,18 +797,8 @@ function ConfiguratorBody({
   onStatChange,
   onMoveChange,
   onValidate,
-  onAddToCart,
 }: ConfiguratorBodyProps) {
   const bottomRef = React.useRef<HTMLDivElement>(null);
-
-  const { data: items = ["None"] } = useQuery<string[]>({
-    queryKey: ["items"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/pokemon/items`);
-      if (!res.ok) throw new Error("Không thể tải danh sách vật phẩm.");
-      return res.json();
-    },
-  });
 
   React.useEffect(() => {
     if (validationResult || validationErrors.length > 0) {
@@ -983,14 +885,6 @@ function ConfiguratorBody({
         </ConfigField>
       </div>
 
-      <ConfigField label="Vật phẩm (Held Item)">
-        <ConfigSelect
-          value={config.heldItem}
-          onChange={(v) => onConfigChange("heldItem", v)}
-          options={items.map((i) => ({ value: i, label: i }))}
-        />
-      </ConfigField>
-
       <div className="space-y-2">
         <label className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-white/60 uppercase">
           <Dna className="h-4 w-4" /> Chiêu thức (tối đa 4)
@@ -1072,18 +966,11 @@ function ConfiguratorBody({
       <div className="flex gap-3 border-t border-white/5 pt-4">
         <Button
           variant="outline"
-          className="flex-1"
+          className="w-full"
           disabled={isValidating}
           onClick={onValidate}
         >
           {isValidating ? "Đang kiểm định..." : "Kiểm tra hợp lệ"}
-        </Button>
-        <Button
-          className="flex-1"
-          disabled={!isValidated}
-          onClick={onAddToCart}
-        >
-          Thêm vào giỏ hàng
         </Button>
       </div>
 
@@ -1247,30 +1134,4 @@ function emptyConfig(): CustomConfig {
   };
 }
 
-function getCartPricing(cart: any[], pricing: PricingConfig) {
-  let total = 0;
-  let customCount = 0;
-  let packCount = 0;
 
-  cart.forEach((item) => {
-    if (item.config?.isPack) {
-      total += Number(item.config.price || 0);
-      packCount++;
-    } else {
-      customCount++;
-    }
-  });
-
-  const isWholesale = customCount >= pricing.wholesaleThreshold;
-  const unitPrice = isWholesale ? pricing.wholesalePrice : pricing.retailPrice;
-  total += customCount * unitPrice;
-
-  return {
-    count: customCount + packCount,
-    customCount,
-    packCount,
-    isWholesale,
-    unitPrice,
-    total
-  };
-}

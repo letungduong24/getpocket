@@ -255,19 +255,36 @@ export class ShopService {
     };
   }
 
-  async getUserOrders(userId: number): Promise<Order[]> {
-    return this.orderRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-      relations: { items: true },
-    });
-  }
+  async getAdminOrders(
+    query: { page?: number; limit?: number; search?: string; status?: string },
+  ) {
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
 
-  async getAdminOrders(): Promise<Order[]> {
-    return this.orderRepository.find({
-      order: { createdAt: 'DESC' },
-      relations: { items: true },
-    });
+    const qb = this.orderRepository.createQueryBuilder('order');
+    qb.orderBy('order.createdAt', 'DESC');
+
+    if (query.search) {
+      qb.andWhere(
+        '(order.customerName ILIKE :search OR order.contactInfo ILIKE :search)',
+        { search: `%${query.search}%` },
+      );
+    }
+
+    if (query.status) {
+      qb.andWhere('order.status = :status', { status: query.status });
+    }
+
+    const [data, total] = await qb.skip(skip).take(limit).getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async updateOrderStatus(

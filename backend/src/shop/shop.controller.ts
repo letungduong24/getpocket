@@ -7,6 +7,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   Res,
   HttpStatus,
   ParseIntPipe,
@@ -59,17 +60,16 @@ export class ShopController {
     return this.shopService.createSimpleOrder(dto);
   }
 
-  @UseGuards(AuthGuard)
-  @Get('orders/my-orders')
-  async getMyOrders(@CurrentUser('sub') userId: number) {
-    return this.shopService.getUserOrders(userId);
-  }
-
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/orders')
-  async getAdminOrders() {
-    return this.shopService.getAdminOrders();
+  async getAdminOrders(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.shopService.getAdminOrders({ page, limit, search, status });
   }
 
   @UseGuards(AuthGuard, RolesGuard)
