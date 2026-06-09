@@ -13,7 +13,7 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "PokeShopping",
   description:
-    "Legality validation and automated Pokémon trading via GTS Home emulation.",
+    "Shop Pokemon Home uy tín, Pokemon bao legal. Hỗ trợ nâng cấp Pokemon Home Premium",
 };
 
 export default function RootLayout({
