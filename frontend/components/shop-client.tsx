@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   AlertTriangle,
+  CheckCircle,
   Sparkles,
   Dna,
   ShieldCheck,
